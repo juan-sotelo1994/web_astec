@@ -1,0 +1,139 @@
+{% extends 'baselogin.html' %}
+
+{% block title %} Verificación de Código {% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Verificación</h2>
+    <p style="color: #666; margin-bottom: 2rem; font-size: 0.95rem; font-weight: 500; line-height: 1.5;">
+        Hemos enviado un código de 6 dígitos a tu correo electrónico. Por favor, ingrésalo a continuación.
+    </p>
+    <form id="verifyForm" novalidate>
+        <div class="code-inputs" style="display: flex; gap: 10px; margin-bottom: 1.5rem; justify-content: space-between;">
+            <input type="text" maxlength="1" class="code-box" required autofocus>
+            <input type="text" maxlength="1" class="code-box" required>
+            <input type="text" maxlength="1" class="code-box" required>
+            <input type="text" maxlength="1" class="code-box" required>
+            <input type="text" maxlength="1" class="code-box" required>
+            <input type="text" maxlength="1" class="code-box" required>
+            <input type="hidden" name="verification_code" id="verification_code">
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <p id="timerText" style="color: #888; font-size: 0.9rem; font-weight: 600;">Reenviar código en <span id="time" style="color: #0070a8;">00:50</span></p>
+            <a href="#" id="resendLink" class="link-signin" style="display: none; font-size: 0.9rem; font-weight: 700;">Reenviar código</a>
+        </div>
+        
+        <div class="form-actions" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <button type="submit" id="verifyBtn" class="btn-signup" style="width: 100%;">Verificar</button>
+            <a href="{{ url_for('recuperar') }}" class="link-signin" style="text-align: center;">&larr; Volver</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Lógica para que al escribir, el cursor salte automáticamente al siguiente cuadro
+    const inputs = document.querySelectorAll('.code-box');
+    const hiddenInput = document.getElementById('verification_code');
+
+    inputs.forEach((input, index) => {
+        // Solo permite números
+        input.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            if(e.target.value.length === 1 && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+            updateHiddenInput();
+        });
+        
+        // Regresa al campo anterior si el usuario presiona borrar
+        input.addEventListener('keydown', (e) => {
+            if(e.key === 'Backspace' && e.target.value === '' && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+    });
+
+    // Concatena todos los valores en un solo input oculto para mandar al backend
+    function updateHiddenInput() {
+        let code = '';
+        inputs.forEach(input => code += input.value);
+        hiddenInput.value = code;
+    }
+
+    // Validar el formulario de verificación y mostrar alerta
+    document.getElementById('verifyForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Simulación: Si el usuario no llenó los 6 campos
+        if (hiddenInput.value.length !== 6) {
+            Swal.fire({
+                title: '¡Código incompleto!',
+                text: 'Por favor ingresa los 6 dígitos que te enviamos al correo.',
+                icon: 'warning',
+                confirmButtonColor: '#0070a8'
+            });
+            return;
+        }
+
+        // Simulación: Si el usuario llenó los 6 campos
+        if (hiddenInput.value.length === 6) {
+            Swal.fire({
+                title: 'Código verificado',
+                text: 'El código es correcto. Por favor, procede a crear tu nueva contraseña.',
+                icon: 'success',
+                confirmButtonColor: '#0070a8',
+                confirmButtonText: 'Crear contraseña',
+                timer: 3500
+            }).then(() => {
+                window.location.href = "{{ url_for('newp') }}";
+            });
+        }
+    });
+
+    // Lógica del Temporizador de 50 Segundos
+    let timeLeft = 50;
+    const timerElement = document.getElementById('time');
+    const timerText = document.getElementById('timerText');
+    const resendLink = document.getElementById('resendLink');
+
+    const countdown = setInterval(() => {
+        timeLeft--;
+        let seconds = timeLeft < 10 ? '0' + timeLeft : timeLeft;
+        timerElement.textContent = '00:' + seconds;
+
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            // Cuando finaliza el tiempo, mostramos el enlace de reenviar
+            timerText.style.display = 'none';
+            resendLink.style.display = 'inline-block';
+        }
+    }, 1000);
+</script>
+
+<style>
+    .code-box {
+        width: 45px;
+        height: 55px;
+        font-size: 1.5rem;
+        text-align: center;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        background: transparent;
+        color: #333;
+        font-weight: 700;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .code-box:focus {
+        border-color: #0070a8;
+        box-shadow: 0 0 8px rgba(0, 112, 168, 0.2);
+        outline: none;
+    }
+    /* Eliminar visualmente las flechitas de los campos numéricos generados */
+    .code-box::-webkit-outer-spin-button,
+    .code-box::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+</style>
+{% endblock %}

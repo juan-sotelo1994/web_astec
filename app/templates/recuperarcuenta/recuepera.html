@@ -1,0 +1,53 @@
+{% extends 'baselogin.html' %}
+
+{% block title %} Recuperar Clave {% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Recuperar Clave</h2>
+    <p style="color: #666; margin-bottom: 2rem; font-size: 0.95rem; font-weight: 500; line-height: 1.5;">
+        Ingresa el correo electrónico asociado a tu cuenta. Te enviaremos un enlace con las instrucciones para restablecer tu contraseña de forma segura.
+    </p>
+    <form id="recuperaForm" novalidate>
+        <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" name="email" placeholder="Ingresa tu correo..." required>
+        </div>
+        
+        <div class="form-actions" style="display: flex; flex-direction: column; gap: 1.5rem; align-items: flex-start; margin-top: 2.5rem;">
+            <button type="submit" class="btn-signup" style="width: 100%;">Enviar enlace de recuperación</button>
+            <a href="{{ url_for('login') }}" class="link-signin" style="display: block; margin: 0 auto; text-align: center;">&larr; Volver a Iniciar Sesión</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('recuperaForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+
+        if (!email || !email.includes('@')) {
+            Swal.fire({
+                title: '¡Correo inválido!',
+                text: 'Por favor ingresa un correo electrónico válido para poder enviarte el enlace de recuperación.',
+                icon: 'warning',
+                confirmButtonColor: '#0070a8'
+            });
+            return;
+        }
+
+        // Comprobación visual usando Sweet Alert
+        Swal.fire({
+            title: '¡Código enviado!',
+            text: 'Si el correo ' + email + ' está registrado, acabamos de enviar instrucciones con el código de recuperación.',
+            icon: 'info',
+            confirmButtonColor: '#0070a8',
+            confirmButtonText: 'Ingresar código',
+            timer: 4500
+        }).then(() => {
+            window.location.href = "{{ url_for('verificacion') }}";
+        });
+    });
+</script>
+{% endblock %}

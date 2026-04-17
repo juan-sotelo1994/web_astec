@@ -1,0 +1,65 @@
+{% extends 'baselogin.html' %}
+
+{% block title %} Iniciar Sesión {% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Iniciar Sesión</h2>
+    <form id="loginForm" novalidate>
+        <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" name="email" placeholder="Ingresa tu correo..." required>
+        </div>
+        <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" name="password" placeholder="*************" required>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-signup">Ingresar</button>
+            <a href="{{ url_for('recuperar') }}" class="link-signin">Recuperar clave</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        // Validaciones manuales con SweetAlert
+        if (!email || !email.includes('@')) {
+            Swal.fire({
+                title: '¡Aviso!',
+                text: 'Por favor ingresa una dirección de correo electrónico válida que contenga el signo "@".',
+                icon: 'warning',
+                confirmButtonColor: '#0070a8'
+            });
+            return;
+        }
+
+        if (!password) {
+            Swal.fire({
+                title: '¡Falta tu clave!',
+                text: 'Por favor ingresa tu contraseña para poder acceder.',
+                icon: 'warning',
+                confirmButtonColor: '#0070a8'
+            });
+            return;
+        }
+        Swal.fire({
+            title: '¡Bienvenido!',
+            text: 'Has iniciado sesión correctamente.',
+            icon: 'success',
+            confirmButtonColor: '#0070a8',
+            confirmButtonText: 'Entrar al Panel',
+            timer: 3000
+        }).then(() => {
+            // Aquí enviarías los datos al backend (o quitar e.preventDefault()),
+            // Por ahora recargará la página simulando que entra al dashboard.
+            window.location.reload(); 
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,244 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    background-color: #0070a8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.split-screen {
+    display: flex;
+    width: 95vw;
+    height: 90vh;
+    max-width: 1400px;
+    background-color: #fff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.left-panel {
+    flex: 1.2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #e0f0ff; /* Light blue background */
+    padding: 2rem;
+}
+
+.left-panel img.logo {
+    max-width: 70%;
+    height: auto;
+    object-fit: contain;
+    mix-blend-mode: multiply; /* This removes the white box from the logo! */
+}
+
+
+.right-panel {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 4rem;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 420px;
+}
+
+h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 2.5rem;
+    color: #222;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #999;
+    text-transform: capitalize;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 0.6rem 0;
+    border: none;
+    border-bottom: 2px solid #eee;
+    outline: none;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+    transition: border-color 0.3s ease;
+    background: transparent;
+}
+
+input::placeholder {
+    color: #d0d0d0;
+    font-weight: 500;
+}
+
+input:focus {
+    border-bottom: 2px solid #0070a8;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-top: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background-color: #f1f1f1;
+    border-radius: 4px;
+    margin-right: 12px;
+    cursor: pointer;
+    position: relative;
+    border: 1px solid #ddd;
+    transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #0070a8;
+    border-color: #0070a8;
+}
+
+input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.terms-label {
+    font-size: 0.85rem;
+    color: #999;
+    margin-bottom: 0;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: none;
+}
+
+.terms-label span {
+    font-weight: 800;
+    color: #555;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.btn-signup {
+    padding: 0.85rem 2.8rem;
+    background: linear-gradient(135deg, #0070a8 0%, #3dbb9a 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 112, 168, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-signup:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 112, 168, 0.5);
+}
+
+.link-signin {
+    color: #888;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 700;
+    transition: color 0.3s;
+}
+
+.link-signin:hover {
+    color: #0070a8;
+}
+
+/* Full screen responsive adjust */
+@media (max-width: 1024px) {
+    .split-screen {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .split-screen {
+        flex-direction: column;
+    }
+    .left-panel {
+        flex: 1;
+        min-height: 250px;
+    }
+    .right-panel {
+        flex: 2;
+        padding: 2rem;
+    }
+    .form-container {
+        max-width: 100%;
+    }
+}
+
+/* Pantalla de Carga (Loader) */
+#loader-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #f7f7f7; /* Fondo claro para que resalte la ruedita azul */
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease;
+}
+
+.loader {
+    border: 8px solid rgba(0, 112, 168, 0.15); /* Pista transparente azul clara */
+    border-top: 8px solid #0070a8; /* Ruedita azul corporativo */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

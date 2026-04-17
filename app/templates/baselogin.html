@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %} Login {% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+    <!-- Pantalla de carga (Loader) -->
+    <div id="loader-wrapper">
+        <div class="loader"></div>
+    </div>
+    
+    <div class="split-screen">
+        <div class="left-panel">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Astecnología Logo" class="logo">
+        </div>
+        
+        <!-- Área dinámica -->
+        <div class="right-panel">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- Script de configuración del loader -->
+    <script src="{{ url_for('static', filename='js/loader.js') }}"></script>
+</body>
+
+</html>
