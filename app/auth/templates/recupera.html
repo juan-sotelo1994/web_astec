@@ -16,7 +16,7 @@
         
         <div class="form-actions" style="display: flex; flex-direction: column; gap: 1.5rem; align-items: flex-start; margin-top: 2.5rem;">
             <button type="submit" class="btn-signup" style="width: 100%;">Enviar enlace de recuperación</button>
-            <a href="{{ url_for('login') }}" class="link-signin" style="display: block; margin: 0 auto; text-align: center;">&larr; Volver a Iniciar Sesión</a>
+            <a href="{{ url_for('autenticar.login') }}" class="link-signin" style="display: block; margin: 0 auto; text-align: center;">&larr; Volver a Iniciar Sesión</a>
         </div>
     </form>
 </div>
@@ -46,7 +46,7 @@
             confirmButtonText: 'Ingresar código',
             timer: 4500
         }).then(() => {
-            window.location.href = "{{ url_for('verificacion') }}";
+            window.location.href = "{{ url_for('autenticar.verificacion') }}";
         });
     });
 </script>

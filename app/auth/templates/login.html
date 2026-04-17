@@ -16,15 +16,15 @@
         </div>
         <div class="form-actions">
             <button type="submit" class="btn-signup">Ingresar</button>
-            <a href="{{ url_for('recuperar') }}" class="link-signin">Recuperar clave</a>
+            <a href="{{ url_for('autenticar.recupera') }}" class="link-signin">Recuperar clave</a>
         </div>
     </form>
 </div>
 
 <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
         e.preventDefault();
-        
+
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
 
@@ -58,7 +58,7 @@
         }).then(() => {
             // Aquí enviarías los datos al backend (o quitar e.preventDefault()),
             // Por ahora recargará la página simulando que entra al dashboard.
-            window.location.reload(); 
+            window.location.reload();
         });
     });
 </script>

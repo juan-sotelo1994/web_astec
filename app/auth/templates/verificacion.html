@@ -26,7 +26,7 @@
         
         <div class="form-actions" style="display: flex; flex-direction: column; gap: 1.5rem;">
             <button type="submit" id="verifyBtn" class="btn-signup" style="width: 100%;">Verificar</button>
-            <a href="{{ url_for('recuperar') }}" class="link-signin" style="text-align: center;">&larr; Volver</a>
+            <a href="{{ url_for('autenticar.recupera') }}" class="link-signin" style="text-align: center;">&larr; Volver</a>
         </div>
     </form>
 </div>
@@ -86,7 +86,7 @@
                 confirmButtonText: 'Crear contraseña',
                 timer: 3500
             }).then(() => {
-                window.location.href = "{{ url_for('newp') }}";
+                window.location.href = "{{ url_for('autenticar.newp') }}";
             });
         }
     });
