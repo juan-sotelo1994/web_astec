@@ -1,0 +1,73 @@
+{% extends 'basedash.html' %}
+
+{% block title %}Dashboard Principal - ASTECNOLOGÍA{% endblock %}
+{% block page_title %}Dashboard General{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <!-- Card 1 -->
+    <div class="stat-card border-blue">
+        <div class="stat-title">EQUIPOS ACTIVOS</div>
+        <div class="stat-value">42</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-arrow-up"></i> 12% este mes
+        </div>
+    </div>
+    
+    <!-- Card 2 -->
+    <div class="stat-card border-orange">
+        <div class="stat-title">ALERTAS PENDIENTES</div>
+        <div class="stat-value">5</div>
+        <div class="stat-subtitle text-danger">
+            <i class="fa-solid fa-triangle-exclamation"></i> Requieren atención
+        </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="stat-card border-green">
+        <div class="stat-title">SALUD DE RED</div>
+        <div class="stat-value">98%</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-circle-check"></i> Estado Óptimo
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity Table -->
+<div class="activity-section">
+    <h2 class="section-title">Actividad Reciente</h2>
+    <div class="table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Dispositivo</th>
+                    <th>IP</th>
+                    <th>Estado</th>
+                    <th>Última Conexión</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="#" class="device-link">FortiGate-100F</a></td>
+                    <td>192.168.1.1</td>
+                    <td><span class="status-badge status-online">En línea</span></td>
+                    <td>Hace 2 minutos</td>
+                </tr>
+                <tr>
+                    <td><a href="#" class="device-link">Switch-Core-01</a></td>
+                    <td>10.0.0.2</td>
+                    <td><span class="status-badge status-online">En línea</span></td>
+                    <td>Hace 5 minutos</td>
+                </tr>
+                <tr>
+                    <td><a href="#" class="device-link">AP-Branch-Sur</a></td>
+                    <td>172.16.5.10</td>
+                    <td><span class="status-badge status-offline">Desconectado</span></td>
+                    <td>Hace 1 hora</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
