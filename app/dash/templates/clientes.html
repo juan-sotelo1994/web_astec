@@ -1,0 +1,265 @@
+{% extends 'basedash.html' %}
+
+{% block title %}Clientes - ASTECNOLOGÍA{% endblock %}
+{% block page_title %}Gestión de Clientes{% endblock %}
+
+{% block content %}
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card border-blue">
+        <div class="stat-title">TOTAL CLIENTES</div>
+        <div class="stat-value">{{ total_clientes }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-users"></i> Registrados en el sistema
+        </div>
+    </div>
+
+    <div class="stat-card border-green">
+        <div class="stat-title">NUEVOS ESTE MES</div>
+        <div class="stat-value">{{ nuevos_clientes }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-arrow-up"></i> Crecimiento mensual
+        </div>
+    </div>
+
+    <div class="stat-card border-orange">
+        <div class="stat-title">PAÍSES</div>
+        <div class="stat-value">{{ total_paises }}</div>
+        <div class="stat-subtitle text-info">
+            <i class="fa-solid fa-globe"></i> Cobertura geográfica
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Clientes -->
+<div class="activity-section">
+    <h2 class="section-title">Listado de Clientes</h2>
+
+    <div class="table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tipo ID</th>
+                    <th>Empresa</th>
+                    <th>Sector</th>
+                    <th>Representante</th>
+                    <th>Contacto</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>País</th>
+                    <th>Fecha Registro</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes %}
+                <tr>
+                    <td>{{ cliente.id_clientes }}</td>
+                    <td>{{ cliente.Tipo_identificador }}</td>
+                    <td>{{ cliente.Nombre_empresa }}</td>
+                    <td>{{ cliente.Sector_Economico_cliente }}</td>
+                    <td>{{ cliente.nombre_representante }}</td>
+                    <td>{{ cliente.contacto_cliente }}</td>
+                    <td>{{ cliente.telefono }}</td>
+                    <td>{{ cliente.email }}</td>
+                    <td>{{ cliente.pais_cliente }}</td>
+                    <td>{{ cliente.fecha_creacion }}</td>
+                    <td style="text-align: center;">
+                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; border-top: 1px solid #f0f4f8; padding-top: 1rem;">
+        <div style="font-weight: 600; font-size: 15px; color: #2c3e50;">
+            <i class="fa-solid fa-chart-line text-success" style="color: #27ae60;"></i> Total clientes nuevos este mes: <span style="color: #27ae60; font-size: 18px; margin-left: 5px;">{{ nuevos_clientes }}</span>
+        </div>
+        <button type="button" onclick="toggleForm()" id="btnToggleForm" style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
+            <i class="fa-solid fa-plus"></i> Añadir Cliente
+        </button>
+    </div>
+
+</div>
+
+<!-- Formulario para Registrar Clientes (Oculto por defecto) -->
+<div id="form-container" class="activity-section" style="margin-top: 2rem; display: none;">
+    <h2 class="section-title">Registrar Nuevo Cliente</h2>
+    <form id="form-cliente" action="{{ url_for('dashboard.clientes') }}" method="POST"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="id_clientes"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">ID Cliente *</label>
+            <input type="text" id="id_clientes" name="id_clientes" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.3s;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="Tipo_identificador"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Tipo Identificador
+                *</label>
+            <select id="Tipo_identificador" name="Tipo_identificador" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="">Seleccione...</option>
+                <option value="NIT">NIT</option>
+                <option value="CC">Cédula de Ciudadanía</option>
+                <option value="CE">Cédula de Extranjería</option>
+                <option value="PASAPORTE">Pasaporte</option>
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="Nombre_empresa"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Nombre de la Empresa
+                *</label>
+            <input type="text" id="Nombre_empresa" name="Nombre_empresa" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="Sector_Economico_cliente"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Sector
+                Económico</label>
+            <input type="text" id="Sector_Economico_cliente" name="Sector_Economico_cliente"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="nombre_representante"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Nombre del
+                Representante</label>
+            <input type="text" id="nombre_representante" name="nombre_representante"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="contacto_cliente"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Contacto (Cargo /
+                Función)</label>
+            <input type="text" id="contacto_cliente" name="contacto_cliente"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="direccion_cliente"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Dirección</label>
+            <input type="text" id="direccion_cliente" name="direccion_cliente"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="pais_cliente"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">País</label>
+            <input type="text" id="pais_cliente" name="pais_cliente"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="Ddepartamento_cliente"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Departamento /
+                Región</label>
+            <input type="text" id="Ddepartamento_cliente" name="Ddepartamento_cliente"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="telefono"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Teléfono</label>
+            <input type="number" id="telefono" name="telefono" step="any"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="email"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Email</label>
+            <input type="email" id="email" name="email"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+            <button type="submit"
+                style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.3s;"
+                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                <i class="fa-solid fa-save"></i> Guardar Cliente
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    function toggleForm() {
+        var formContainer = document.getElementById("form-container");
+        var btnToggle = document.getElementById("btnToggleForm");
+        
+        if (formContainer.style.display === "none") {
+            formContainer.style.display = "block";
+            btnToggle.innerHTML = '<i class="fa-solid fa-minus"></i> Ocultar Formulario';
+            btnToggle.style.backgroundColor = '#e74c3c';
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            formContainer.style.display = "none";
+            btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Cliente';
+            btnToggle.style.backgroundColor = '#005b9f';
+        }
+    }
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById('form-cliente').addEventListener('submit', function(e) {
+        e.preventDefault(); 
+        
+        if (!this.checkValidity()) {
+            this.reportValidity();
+            return;
+        }
+
+        const empresa = document.getElementById('Nombre_empresa').value;
+        const tipoIdEl = document.getElementById('Tipo_identificador');
+        const tipoId = tipoIdEl.options[tipoIdEl.selectedIndex].text;
+        const numId = document.getElementById('id_clientes').value;
+
+        Swal.fire({
+            title: 'Confirmar Registro',
+            html: `<div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 14px; margin-top: 10px;">
+                    <p>Vas a registrar un nuevo cliente con los siguientes datos principales:</p>
+                    <b>Empresa:</b> ${empresa}<br>
+                    <b>${tipoId}:</b> ${numId}
+                   </div>
+                   <br>¿Los datos son correctos?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#005b9f',
+            cancelButtonColor: '#e74c3c',
+            confirmButtonText: '<i class="fa-solid fa-check"></i> Sí, guardar cliente',
+            cancelButtonText: '<i class="fa-solid fa-xmark"></i> Revisar datos'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Guardando...',
+                    text: 'Se está procesando el registro',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                        // Enviamos el formulario original
+                        e.target.submit();
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

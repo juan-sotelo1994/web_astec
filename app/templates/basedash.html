@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,15 +15,18 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
     <div class="dashboard-container">
-        
+
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Astecnología" class="sidebar-logo-img" onerror="this.src='https://via.placeholder.com/150x50?text=ASTECNOLOGIA'">
+                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Astecnología"
+                        class="sidebar-logo-img"
+                        onerror="this.src='https://via.placeholder.com/150x50?text=ASTECNOLOGIA'">
                 </div>
             </div>
 
@@ -35,11 +39,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="fa-solid fa-server"></i>
+                        <a href="{{ url_for('dashboard.clientes') }}" class="nav-link">
+                            <i class="fa-solid fa-users"></i>
                             <span>Clientes</span>
                         </a>
                     </li>
+
                     <li class="nav-item">
                         <a href="#" class="nav-link">
                             <i class="fa-solid fa-shield-halved"></i>
@@ -76,7 +81,7 @@
                             <span>Ventas</span>
                         </a>
                     </li>
-                    
+
                     <hr class="nav-divider">
 
                     <li class="nav-item">
@@ -97,7 +102,7 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            
+
             <!-- Top Header -->
             <header class="top-header">
                 <h1 class="page-title">{% block page_title %}Dashboard General{% endblock %}</h1>
@@ -122,4 +127,5 @@
 
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>
