@@ -47,7 +47,7 @@
                 {% for doc in facturas %}
                 <tr>
                     <td>{{ doc.id_factura }}</td>
-                    <td>{{ doc.Nombre_empresa if doc.Nombre_empresa else doc.cliente_id }}</td>
+                    <td>{{ doc.nombre_empresa if doc.nombre_empresa else doc.cliente_id }}</td>
                     <td>{{ doc.usuario_id }}</td>
                     <td>{{ doc.cotizacion_id if doc.cotizacion_id else 'N/A' }}</td>
                     <td>{{ doc.fecha }}</td>
@@ -75,7 +75,7 @@
             <select id="cliente_id" name="cliente_id" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
                 <option value="">Seleccione...</option>
                 {% for cli in clientes %}
-                <option value="{{ cli.id_clientes }}">{{ cli.Nombre_empresa }} ({{ cli.id_clientes }})</option>
+                <option value="{{ cli.id_cliente }}">{{ cli.nombre_empresa }} ({{ cli.numero_identificacion }})</option>
                 {% endfor %}
             </select>
         </div>

@@ -1,0 +1,129 @@
+{% extends 'basedash.html' %}
+
+{% block title %}Productos - ASTECNOLOGÍA{% endblock %}
+{% block page_title %}Catálogo de Productos{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card border-blue">
+        <div class="stat-title">TOTAL PRODUCTOS</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-boxes-stacked"></i> Productos registrados
+        </div>
+    </div>
+</div>
+
+<div class="activity-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 class="section-title" style="margin-bottom: 0;">Listado de Productos</h2>
+        <button type="button" onclick="toggleForm()" id="btnToggleForm" style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
+            <i class="fa-solid fa-plus"></i> Añadir Producto
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Precio Unit.</th>
+                    <th>Moneda</th>
+                    <th>Stock</th>
+                    <th>Proveedor</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prod in productos %}
+                <tr>
+                    <td>{{ prod.id_productos }}</td>
+                    <td>{{ prod.nombre_producto }}</td>
+                    <td>{{ prod.descripcion_producto }}</td>
+                    <td>{{ prod.precio_unitario_producto }}</td>
+                    <td>{{ prod.moneda }}</td>
+                    <td>{{ prod.stock }}</td>
+                    <td>{{ prod.nombre_proveedor }}</td>
+                    <td style="text-align: center;">
+                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="form-container" class="activity-section" style="margin-top: 2rem; display: none;">
+    <h2 class="section-title">Registrar Nuevo Producto</h2>
+    <form id="form-producto" action="{{ url_for('dashboard.productos') }}" method="POST"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="nombre_producto" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Nombre del Producto *</label>
+            <input type="text" id="nombre_producto" name="nombre_producto" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="precio_unitario_producto" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Precio Unitario *</label>
+            <input type="number" step="0.01" id="precio_unitario_producto" name="precio_unitario_producto" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="moneda" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Moneda *</label>
+            <select id="moneda" name="moneda" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="COP" selected>COP - Pesos Colombianos</option>
+                <option value="USD">USD - Dólares</option>
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="stock" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Stock Default</label>
+            <input type="number" id="stock" name="stock" value="0" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="proveedor_id" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Proveedor *</label>
+            <select id="proveedor_id" name="proveedor_id" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="">Seleccione proveedor...</option>
+                {% for prov in proveedores %}
+                <option value="{{ prov.id_proveedor }}">{{ prov.nombre_proveedor }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column; grid-column: 1 / -1;">
+            <label for="descripcion_producto" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Descripción</label>
+            <textarea id="descripcion_producto" name="descripcion_producto" rows="3" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;"></textarea>
+        </div>
+
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+            <button type="submit" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-save"></i> Guardar Producto
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleForm() {
+        var formContainer = document.getElementById("form-container");
+        var btnToggle = document.getElementById("btnToggleForm");
+        
+        if (formContainer.style.display === "none") {
+            formContainer.style.display = "block";
+            btnToggle.innerHTML = '<i class="fa-solid fa-minus"></i> Ocultar Formulario';
+            btnToggle.style.backgroundColor = '#e74c3c';
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            formContainer.style.display = "none";
+            btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Producto';
+            btnToggle.style.backgroundColor = '#005b9f';
+        }
+    }
+</script>
+{% endblock %}

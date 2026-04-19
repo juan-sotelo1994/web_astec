@@ -96,7 +96,7 @@
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
                 <option value="">Seleccione un cliente...</option>
                 {% for cli in clientes %}
-                <option value="{{ cli.id_clientes }}">{{ cli.Nombre_empresa }} ({{ cli.id_clientes }})</option>
+                <option value="{{ cli.id_cliente }}">{{ cli.nombre_empresa }} ({{ cli.numero_identificacion }})</option>
                 {% endfor %}
             </select>
         </div>

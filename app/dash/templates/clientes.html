@@ -62,10 +62,10 @@
             <tbody>
                 {% for cliente in clientes %}
                 <tr>
-                    <td>{{ cliente.id_clientes }}</td>
-                    <td>{{ cliente.Tipo_identificador }}</td>
-                    <td>{{ cliente.Nombre_empresa }}</td>
-                    <td>{{ cliente.Sector_Economico_cliente }}</td>
+                    <td>{{ cliente.tipo_identificador }}</td>
+                    <td>{{ cliente.numero_identificacion }}</td>
+                    <td>{{ cliente.nombre_empresa }}</td>
+                    <td>{{ cliente.sector_economico }}</td>
                     <td>{{ cliente.nombre_representante }}</td>
                     <td>{{ cliente.contacto_cliente }}</td>
                     <td>{{ cliente.telefono }}</td>
@@ -102,17 +102,10 @@
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
 
         <div style="display: flex; flex-direction: column;">
-            <label for="id_clientes"
-                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">ID Cliente *</label>
-            <input type="text" id="id_clientes" name="id_clientes" required
-                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.3s;">
-        </div>
-
-        <div style="display: flex; flex-direction: column;">
-            <label for="Tipo_identificador"
+            <label for="tipo_identificador"
                 style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Tipo Identificador
                 *</label>
-            <select id="Tipo_identificador" name="Tipo_identificador" required
+            <select id="tipo_identificador" name="tipo_identificador" required
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
                 <option value="">Seleccione...</option>
                 <option value="NIT">NIT</option>
@@ -123,18 +116,26 @@
         </div>
 
         <div style="display: flex; flex-direction: column;">
-            <label for="Nombre_empresa"
+            <label for="numero_identificacion"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Numero de Documento
+                *</label>
+            <input type="text" id="numero_identificacion" name="numero_identificacion" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.3s;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="nombre_empresa"
                 style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Nombre de la Empresa
                 *</label>
-            <input type="text" id="Nombre_empresa" name="Nombre_empresa" required
+            <input type="text" id="nombre_empresa" name="nombre_empresa" required
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
         <div style="display: flex; flex-direction: column;">
-            <label for="Sector_Economico_cliente"
+            <label for="sector_economico"
                 style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Sector
                 Económico</label>
-            <input type="text" id="Sector_Economico_cliente" name="Sector_Economico_cliente"
+            <input type="text" id="sector_economico" name="sector_economico"
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
@@ -169,10 +170,16 @@
         </div>
 
         <div style="display: flex; flex-direction: column;">
-            <label for="Ddepartamento_cliente"
+            <label for="departamento_cliente"
                 style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Departamento /
                 Región</label>
-            <input type="text" id="Ddepartamento_cliente" name="Ddepartamento_cliente"
+            <input type="text" id="departamento_cliente" name="departamento_cliente"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+            <label for="ciudad_cliente"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Ciudad</label>
+            <input type="text" id="ciudad_cliente" name="ciudad_cliente"
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
@@ -232,10 +239,10 @@
             return;
         }
 
-        const empresa = document.getElementById('Nombre_empresa').value;
-        const tipoIdEl = document.getElementById('Tipo_identificador');
+        const empresa = document.getElementById('nombre_empresa').value;
+        const tipoIdEl = document.getElementById('tipo_identificador');
         const tipoId = tipoIdEl.options[tipoIdEl.selectedIndex].text;
-        const numId = document.getElementById('id_clientes').value;
+        const numId = document.getElementById('numero_identificacion').value;
 
         Swal.fire({
             title: 'Confirmar Registro',
