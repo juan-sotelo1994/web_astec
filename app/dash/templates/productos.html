@@ -47,9 +47,11 @@
                     <td>{{ prod.stock }}</td>
                     <td>{{ prod.nombre_proveedor }}</td>
                     <td style="text-align: center;">
-                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                        <button type="button"
+                            data-id="{{ prod.id_productos }}" data-nom="{{ prod.nombre_producto }}" data-pre="{{ prod.precio_unitario_producto|default(0, true) }}" data-mon="{{ prod.moneda|default('COP', true) }}" data-stk="{{ prod.stock|default(0, true) }}" data-prov="{{ prod.proveedor_id|default('', true) }}" data-desc="{{ prod.descripcion_producto|default('', true) }}"
+                            onclick="editProducto(this.dataset.id, this.dataset.nom, this.dataset.pre, this.dataset.mon, this.dataset.stk, this.dataset.prov, this.dataset.desc)" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
                             <i class="fa-solid fa-pen-to-square"></i> Editar
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -62,6 +64,7 @@
     <h2 class="section-title">Registrar Nuevo Producto</h2>
     <form id="form-producto" action="{{ url_for('dashboard.productos') }}" method="POST"
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <input type="hidden" name="id_edit" id="id_edit">
 
         <div style="display: flex; flex-direction: column;">
             <label for="nombre_producto" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Nombre del Producto *</label>
@@ -101,9 +104,10 @@
             <textarea id="descripcion_producto" name="descripcion_producto" rows="3" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;"></textarea>
         </div>
 
-        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-save"></i> Guardar Producto
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 1rem;">
+            <button type="button" id="btnCancelEdit" onclick="cancelEdit()" style="display:none; padding: 0.75rem 2rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer;">Cancelar</button>
+            <button type="submit" id="btnSubmitForm" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-save"></i> <span id="btnSubmitText">Guardar Producto</span>
             </button>
         </div>
     </form>
@@ -123,7 +127,34 @@
             formContainer.style.display = "none";
             btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Producto';
             btnToggle.style.backgroundColor = '#005b9f';
+            cancelEdit();
         }
+    }
+
+    function editProducto(id, nombre, precio, moneda, stock, prov, desc) {
+        var formContainer = document.getElementById("form-container");
+        if (formContainer.style.display === "none") {
+            toggleForm();
+        } else {
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        document.getElementById('id_edit').value = id;
+        document.getElementById('nombre_producto').value = nombre;
+        document.getElementById('precio_unitario_producto').value = precio;
+        document.getElementById('moneda').value = moneda;
+        document.getElementById('stock').value = stock;
+        document.getElementById('proveedor_id').value = prov;
+        document.getElementById('descripcion_producto').value = desc;
+
+        document.getElementById('btnSubmitText').textContent = 'Actualizar Producto';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+    }
+
+    function cancelEdit() {
+        document.getElementById('id_edit').value = '';
+        document.getElementById('form-producto').reset();
+        document.getElementById('btnSubmitText').textContent = 'Guardar Producto';
+        document.getElementById('btnCancelEdit').style.display = 'none';
     }
 </script>
 {% endblock %}

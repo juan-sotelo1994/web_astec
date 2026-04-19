@@ -5,18 +5,18 @@ from db import obtener_conexion
 # ==========================================
 # GESTIÓN DE CLIENTES
 # ==========================================
-def insertar_cliente(id_clientes, tipo_id, empresa, sector, representante, contacto, direccion, pais, departamento, telefono, email):
+def insertar_cliente(id_cliente, tipo_id, empresa, sector, representante, contacto, direccion, pais, departamento, telefono, email):
     conexion = obtener_conexion()
     if not conexion: return
     try:
         cursor = conexion.cursor()
         cursor.execute('''
             INSERT INTO clientes (
-                id_cliente, tipo_identificador, nombre_empresa, sector_economico,
+                numero_identificacion, tipo_identificador, nombre_empresa, sector_economico,
                 nombre_representante, contacto_cliente, direccion_cliente, pais_cliente,
                 departamento_cliente, telefono, email
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ''', (id_clientes, tipo_id, empresa, sector, representante, contacto, direccion, pais, departamento, telefono, email))
+        ''', (id_cliente, tipo_id, empresa, sector, representante, contacto, direccion, pais, departamento, telefono, email))
         conexion.commit()
         cursor.close()
     except Exception as e:
@@ -49,6 +49,7 @@ def eliminar_cliente(id_cliente):
     finally:
         conexion.close()
 
+
 # ==========================================
 # GESTIÓN DE SERVICIOS
 # ==========================================
@@ -67,7 +68,7 @@ def obtener_servicios():
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM servicios ORDER BY id_servicio DESC')
+        cursor.execute('SELECT id_servicios AS id_servicio, id_servicios, nombre, descripcion FROM servicios')
         return cursor.fetchall()
     except Exception as e:
         print(f"Error obteniendo servicios: {e}")
@@ -79,12 +80,13 @@ def eliminar_servicio(id_servicio):
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor()
-        cursor.execute("DELETE FROM servicios WHERE id_servicio = %s", (id_servicio,))
+        cursor.execute("DELETE FROM servicios WHERE id_servicios = %s", (id_servicio,))
         conexion.commit()
     except Exception as e:
         print(f"Error eliminando servicio: {e}")
     finally:
         if conexion: conexion.close()
+
 
 # ==========================================
 # GESTIÓN DE PROVEEDORES
@@ -108,10 +110,10 @@ def obtener_proveedores():
     try:
         cursor = conexion.cursor(dictionary=True)
         cursor.execute('''
-            SELECT p.*, s.nombre as servicio_nombre 
+            SELECT p.id_proveedores AS id_proveedor, p.*, s.nombre as servicio_nombre 
             FROM proveedores p 
-            LEFT JOIN servicios s ON p.servicio_id = s.id_servicio 
-            ORDER BY p.id_proveedor DESC
+            LEFT JOIN servicios s ON p.servicio_id = s.id_servicios 
+            ORDER BY p.id_proveedores DESC
         ''')
         return cursor.fetchall()
     except Exception as e:
@@ -124,12 +126,13 @@ def eliminar_proveedor(id_proveedor):
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor()
-        cursor.execute("DELETE FROM proveedores WHERE id_proveedor = %s", (id_proveedor,))
+        cursor.execute("DELETE FROM proveedores WHERE id_proveedores = %s", (id_proveedor,))
         conexion.commit()
     except Exception as e:
         print(f"Error eliminando proveedor: {e}")
     finally:
         if conexion: conexion.close()
+
 
 # ==========================================
 # GESTIÓN DE USUARIOS
@@ -139,7 +142,7 @@ def insertar_usuario(empresa, nombre, email, password_hash, rol, telefono):
     try:
         cursor = conexion.cursor()
         cursor.execute('''
-            INSERT INTO usuarios (nombre_empresa, nombre_completo, email, password_hash, rol, telefono) 
+            INSERT INTO usuarios (nombre_empresa, nombre, email, password_hash, rol, telefono) 
             VALUES (%s, %s, %s, %s, %s, %s)
         ''', (empresa, nombre, email, password_hash, rol, telefono))
         conexion.commit()
@@ -152,7 +155,7 @@ def obtener_usuarios():
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM usuarios ORDER BY id_usuario DESC')
+        cursor.execute('SELECT id_usuarios AS id_usuario, u.*, nombre AS nombre_completo FROM usuarios u ORDER BY id_usuarios DESC')
         return cursor.fetchall()
     except Exception as e:
         print(f"Error obteniendo usuarios: {e}")
@@ -164,7 +167,7 @@ def eliminar_usuario(id_usuario):
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor()
-        cursor.execute("DELETE FROM usuarios WHERE id_usuario = %s", (id_usuario,))
+        cursor.execute("DELETE FROM usuarios WHERE id_usuarios = %s", (id_usuario,))
         conexion.commit()
     except Exception as e:
         print(f"Error eliminando usuario: {e}")
@@ -176,8 +179,8 @@ def actualizar_usuario(empresa, nombre, email, rol, telefono, id_usuario):
     try:
         cursor = conexion.cursor()
         cursor.execute('''
-            UPDATE usuarios SET nombre_empresa = %s, nombre_completo = %s, email = %s, rol = %s, telefono = %s 
-            WHERE id_usuario = %s
+            UPDATE usuarios SET nombre_empresa = %s, nombre = %s, email = %s, rol = %s, telefono = %s 
+            WHERE id_usuarios = %s
         ''', (empresa, nombre, email, rol, telefono, id_usuario))
         conexion.commit()
     except Exception as e:
@@ -190,7 +193,7 @@ def obtener_usuario_por_id(id_usuario):
     try:
         cursor = conexion.cursor(dictionary=True)
         cursor.execute(
-            "SELECT id_usuario, nombre_empresa, nombre_completo, email, rol, telefono FROM usuarios WHERE id_usuario = %s", (id_usuario,)
+            "SELECT id_usuarios AS id_usuario, nombre_empresa, nombre AS nombre_completo, email, rol, telefono FROM usuarios WHERE id_usuarios = %s", (id_usuario,)
         )
         return cursor.fetchone()
     except Exception as e:
@@ -198,18 +201,19 @@ def obtener_usuario_por_id(id_usuario):
         return None
     finally:
         if conexion: conexion.close()
-    
+
+
 # ==========================================
 # GESTIÓN DE COTIZACIONES
 # ==========================================
-def insertar_cotizacion(cliente_id, vendedor_id, fecha_vencimiento, estado, total, observaciones):
+def insertar_cotizacion(cliente_id, usuario_id, estado, total):
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor()
         cursor.execute('''
-            INSERT INTO cotizaciones (cliente_id, vendedor_id, fecha_vencimiento, estado, total, observaciones) 
-            VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (cliente_id, vendedor_id, fecha_vencimiento, estado, total, observaciones))
+            INSERT INTO cotizaciones (cliente_id, usuario_id, estado, total) 
+            VALUES (%s, %s, %s, %s)
+        ''', (cliente_id, usuario_id, estado, total))
         conexion.commit()
     except Exception as e:
         print(f"Error insertando cotizacion: {e}")
@@ -220,7 +224,11 @@ def obtener_cotizaciones():
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM cotizaciones ORDER BY fecha_emision DESC')
+        cursor.execute('''
+            SELECT id_cotizacion, cliente_id, usuario_id AS vendedor_id, 
+                   fecha AS fecha_emision, total, estado 
+            FROM cotizaciones ORDER BY fecha DESC
+        ''')
         return cursor.fetchall()
     except Exception as e:
         print(f"Error obteniendo cotizaciones: {e}")
@@ -228,27 +236,28 @@ def obtener_cotizaciones():
     finally:
         if conexion: conexion.close()
 
+
 # ==========================================
 # GESTIÓN DE FACTURAS Y MOVIMIENTOS
 # ==========================================
-def insertar_factura(cliente_id, usuario_id, vendedor_id, cotizacion_id, total, estado):
+def insertar_factura(cliente_id, usuario_id, total, estado):
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor()
         cursor.execute('''
-            INSERT INTO facturas (cliente_id, usuario_id, vendedor_id, cotizacion_id, total, estado) 
-            VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (cliente_id, usuario_id, vendedor_id, cotizacion_id, total, estado))
+            INSERT INTO facturas (cliente_id, usuario_id, total, estado) 
+            VALUES (%s, %s, %s, %s)
+        ''', (cliente_id, usuario_id, total, estado))
         
         cursor.execute("SELECT LAST_INSERT_ID() AS last_id")
         res = cursor.fetchone()
-        factura_id = res['last_id'] if res and isinstance(res, dict) else res[0]
+        factura_id = res['last_id'] if res and isinstance(res, dict) else (res[0] if res else 0)
         
         # Registrar el ingreso automatizado en la caja de contabilidad
         cursor.execute('''
-            INSERT INTO movimientos_contables (descripcion, tipo, monto, factura_id) 
-            VALUES (%s, %s, %s, %s)
-        ''', (f"Venta con Factura #{factura_id}", "INGRESO", total, factura_id))
+            INSERT INTO movimientos_contables (descripcion, tipo, monto, referencia_id, referencia_tipo) 
+            VALUES (%s, 'ingreso', %s, %s, 'factura')
+        ''', (f"Venta con Factura #{factura_id}", total, factura_id))
         
         conexion.commit()
     except Exception as e:
@@ -256,13 +265,13 @@ def insertar_factura(cliente_id, usuario_id, vendedor_id, cotizacion_id, total, 
     finally:
         if conexion: conexion.close()
 
-
 def obtener_facturas():
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor(dictionary=True)
         cursor.execute('''
-            SELECT f.*, c.nombre_empresa 
+            SELECT f.id_factura, f.cliente_id, f.usuario_id, f.fecha, 
+                   f.total, f.estado, c.nombre_empresa 
             FROM facturas f 
             LEFT JOIN clientes c ON f.cliente_id = c.id_cliente 
             ORDER BY f.fecha DESC
@@ -280,7 +289,7 @@ def obtener_movimientos_ingresos():
         cursor = conexion.cursor(dictionary=True)
         cursor.execute('''
             SELECT * FROM movimientos_contables 
-            WHERE tipo = 'INGRESO' 
+            WHERE tipo = 'ingreso' 
             ORDER BY fecha DESC
         ''')
         return cursor.fetchall()

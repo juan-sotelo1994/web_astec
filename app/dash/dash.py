@@ -6,116 +6,6 @@ from db import obtener_conexion
 
 def get_db():
     conn = obtener_conexion()
-    if conn is None:
-        return None
-        
-    cursor = conn.cursor()
-    
-    # 1. TABLAS MAESTRAS
-    cursor.execute('''CREATE TABLE IF NOT EXISTS servicios (
-        id_servicio INT AUTO_INCREMENT PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        descripcion TEXT
-    )''')
-
-    cursor.execute('''CREATE TABLE IF NOT EXISTS clientes (
-        id_cliente INT AUTO_INCREMENT PRIMARY KEY,
-        numero_identificacion VARCHAR(50) NOT NULL UNIQUE,
-        tipo_identificador VARCHAR(50),
-        nombre_empresa VARCHAR(100),
-        sector_economico VARCHAR(100),
-        nombre_representante VARCHAR(100),
-        contacto_cliente VARCHAR(100),
-        direccion_cliente VARCHAR(100),
-        pais_cliente VARCHAR(100),
-        departamento_cliente VARCHAR(100),
-        ciudad_cliente VARCHAR(100),
-        telefono VARCHAR(20),
-        email VARCHAR(100),
-        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )''')
-
-    cursor.execute('''CREATE TABLE IF NOT EXISTS proveedores (
-        id_proveedor INT AUTO_INCREMENT PRIMARY KEY,
-        nombre_proveedor VARCHAR(100) NOT NULL,
-        nombre_representante VARCHAR(100),
-        nit VARCHAR(20) UNIQUE,
-        telefono VARCHAR(20),
-        email VARCHAR(100),
-        direccion TEXT,
-        servicio_id INT,
-        FOREIGN KEY (servicio_id) REFERENCES servicios(id_servicio)
-    )''')
-
-    cursor.execute('''CREATE TABLE IF NOT EXISTS productos (
-        id_productos INT AUTO_INCREMENT PRIMARY KEY,
-        nombre_producto VARCHAR(100) NOT NULL,
-        descripcion_producto TEXT,
-        precio_unitario_producto NUMERIC(10,2) NOT NULL,
-        moneda VARCHAR(10) DEFAULT 'COP',
-        stock INT DEFAULT 0,
-        proveedor_id INT,
-        FOREIGN KEY (proveedor_id) REFERENCES proveedores(id_proveedor)
-    )''')
-
-    # 2. PERSONAL Y SEGURIDAD
-    cursor.execute('''CREATE TABLE IF NOT EXISTS vendedor (
-        id_vendedor INT AUTO_INCREMENT PRIMARY KEY,
-        tipo_identificador VARCHAR(100),
-        nombre_empresa VARCHAR(100),
-        direccion_empresa VARCHAR(100),
-        pais_empresa VARCHAR(100),
-        departamento_empresa VARCHAR(100),
-        ciudad_empresa VARCHAR(100)
-    )''')
-
-    cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
-        id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-        nombre_empresa VARCHAR(100),
-        nombre_completo VARCHAR(100),
-        email VARCHAR(100) UNIQUE NOT NULL,
-        password_hash VARCHAR(255) NOT NULL,
-        rol VARCHAR(50),
-        telefono VARCHAR(20)
-    )''')
-
-    # 3. PROCESO DE PRE-VENTA
-    cursor.execute('''CREATE TABLE IF NOT EXISTS cotizaciones (
-        id_cotizacion INT AUTO_INCREMENT PRIMARY KEY,
-        cliente_id VARCHAR(50) NOT NULL,
-        vendedor_id INT NOT NULL,
-        fecha_emision TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        fecha_vencimiento DATE,
-        estado VARCHAR(20) DEFAULT 'Pendiente', 
-        total NUMERIC(12,2) DEFAULT 0,
-        observaciones TEXT
-    )''')
-
-    # 4. TRANSACCIONES REALES
-    cursor.execute('''CREATE TABLE IF NOT EXISTS facturas (
-        id_factura INT AUTO_INCREMENT PRIMARY KEY,
-        cliente_id VARCHAR(50) NOT NULL,
-        usuario_id INT NOT NULL,
-        vendedor_id INT NOT NULL,
-        cotizacion_id INT,
-        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        total NUMERIC(12,2) DEFAULT 0,
-        estado VARCHAR(20) DEFAULT 'Emitida'
-    )''')
-
-    # 5. CONTABILIDAD
-    cursor.execute('''CREATE TABLE IF NOT EXISTS movimientos_contables (
-        id_movimiento INT AUTO_INCREMENT PRIMARY KEY,
-        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        descripcion TEXT,
-        tipo VARCHAR(10),
-        monto NUMERIC(12,2) NOT NULL,
-        factura_id INT,
-        compra_id INT
-    )''')
-
-    conn.commit()
-    cursor.close()
     return conn
 
 @dashboard_bp.route('/dashboard')
@@ -128,6 +18,7 @@ def clientes():
     if conn is None: return "Error de BD"
     
     if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
         numero_id = request.form.get('numero_identificacion')
         tipo_id = request.form.get('tipo_identificador')
         empresa = request.form.get('nombre_empresa')
@@ -141,27 +32,37 @@ def clientes():
         telefono = request.form.get('telefono')
         email = request.form.get('email')
 
+        cursor = conn.cursor()
         try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO clientes (
-                    numero_identificacion, tipo_identificador, nombre_empresa, sector_economico,
-                    nombre_representante, contacto_cliente, direccion_cliente, pais_cliente,
-                    departamento_cliente, ciudad_cliente, telefono, email
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ''', (numero_id, tipo_id, empresa, sector, representante, 
-                  contacto, direccion, pais, departamento, ciudad, telefono, email))
+            if id_edit:
+                cursor.execute('''
+                    UPDATE clientes SET
+                        numero_identificacion=%s, tipo_identificador=%s, nombre_empresa=%s, sector_economico=%s,
+                        nombre_representante=%s, contacto_cliente=%s, direccion_cliente=%s, pais_cliente=%s,
+                        departamento_cliente=%s, ciudad_cliente=%s, telefono=%s, email=%s
+                    WHERE id_cliente=%s
+                ''', (numero_id, tipo_id, empresa, sector, representante,
+                      contacto, direccion, pais, departamento, ciudad, telefono, email, id_edit))
+            else:
+                cursor.execute('''
+                    INSERT INTO clientes (
+                        numero_identificacion, tipo_identificador, nombre_empresa, sector_economico,
+                        nombre_representante, contacto_cliente, direccion_cliente, pais_cliente,
+                        departamento_cliente, ciudad_cliente, telefono, email
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (numero_id, tipo_id, empresa, sector, representante, 
+                      contacto, direccion, pais, departamento, ciudad, telefono, email))
             conn.commit()
-            cursor.close()
         except mysql.connector.IntegrityError:
             pass
-        conn.close()
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('dashboard.clientes'))
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute('SELECT * FROM clientes ORDER BY fecha_creacion DESC')
     clientes_records = cursor.fetchall()
-    
     total_clientes = len(clientes_records)
     nuevos_clientes = total_clientes
     total_paises = len(set([c['pais_cliente'] for c in clientes_records if c.get('pais_cliente')]))
@@ -175,63 +76,83 @@ def cotizaciones():
     if conn is None: return "Error de BD"
     
     if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
         cliente_id = request.form.get('cliente_id')
-        vendedor_id = request.form.get('vendedor_id')
-        fecha_vencimiento = request.form.get('fecha_vencimiento')
+        vendedor_id = request.form.get('vendedor_id') or request.form.get('usuario_id')
         estado = request.form.get('estado')
+        if not estado or estado.lower() not in ['borrador','enviada','aprobada','rechazada']:
+            estado = 'borrador'
         total = request.form.get('total')
-        observaciones = request.form.get('observaciones')
 
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO cotizaciones (
-                cliente_id, vendedor_id, fecha_vencimiento, estado, total, observaciones
-            ) VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (cliente_id, vendedor_id, fecha_vencimiento, estado, total, observaciones))
-        conn.commit()
-        cursor.close()
-        conn.close()
+        try:
+            if id_edit:
+                cursor.execute('''
+                    UPDATE cotizaciones SET
+                        cliente_id=%s, usuario_id=%s, estado=%s, total=%s
+                    WHERE id_cotizacion=%s
+                ''', (cliente_id, vendedor_id, estado, total, id_edit))
+            else:
+                cursor.execute('''
+                    INSERT INTO cotizaciones (cliente_id, usuario_id, estado, total) 
+                    VALUES (%s, %s, %s, %s)
+                ''', (cliente_id, vendedor_id, estado, total))
+            conn.commit()
+        except Exception:
+            pass
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('dashboard.cotizaciones'))
 
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM cotizaciones ORDER BY fecha_emision DESC')
+    cursor.execute('''
+        SELECT id_cotizacion, cliente_id, usuario_id AS vendedor_id, 
+               fecha AS fecha_emision, total, estado 
+        FROM cotizaciones ORDER BY fecha DESC
+    ''')
     cotizaciones_records = cursor.fetchall()
-    
     total_cotizaciones = len(cotizaciones_records)
-    
-    cursor.execute("SELECT COUNT(*) as c FROM cotizaciones WHERE estado='Pendiente'")
-    pendientes = cursor.fetchone()['c'] or 0
-    
+    cursor.execute("SELECT COUNT(*) as c FROM cotizaciones WHERE estado='borrador'")
+    pendients = cursor.fetchone()
+    pendientes = pendients['c'] if pendients else 0
     cursor.execute("SELECT SUM(total) as t FROM cotizaciones")
-    sum_res = cursor.fetchone()
-    total_sum = sum_res['t'] if sum_res and sum_res['t'] else 0
+    sum_r = cursor.fetchone()
+    total_sum = sum_r['t'] if sum_r and sum_r['t'] else 0
     total_sum_fmt = f"${total_sum:,.2f}"
-    
     cursor.execute("SELECT id_cliente, nombre_empresa, numero_identificacion FROM clientes")
     clientes_list = cursor.fetchall()
-    
+    cursor.execute("SELECT id_usuarios AS id_usuario, nombre AS nombre_completo FROM usuarios")
+    vendedores_list = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('cotizaciones.html', cotizaciones=cotizaciones_records, total_cotizaciones=total_cotizaciones, pendientes=pendientes, total_sum_fmt=total_sum_fmt, clientes=clientes_list)
+    return render_template('cotizaciones.html', cotizaciones=cotizaciones_records, total_cotizaciones=total_cotizaciones, pendientes=pendientes, total_sum_fmt=total_sum_fmt, clientes=clientes_list, vendedores=vendedores_list)
 
 
 @dashboard_bp.route('/servicios', methods=['GET', 'POST'])
 def servicios():
     conn = get_db()
     if conn is None: return "Error de BD"
-    
     if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
         nombre = request.form.get('nombre')
         descripcion = request.form.get('descripcion')
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO servicios (nombre, descripcion) VALUES (%s, %s)', (nombre, descripcion))
-        conn.commit()
-        cursor.close()
-        conn.close()
+        try:
+            if id_edit:
+                cursor.execute('UPDATE servicios SET nombre=%s, descripcion=%s WHERE id_servicios=%s', (nombre, descripcion, id_edit))
+            else:
+                cursor.execute('INSERT INTO servicios (nombre, descripcion) VALUES (%s, %s)', (nombre, descripcion))
+            conn.commit()
+        except mysql.connector.IntegrityError:
+            pass
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('dashboard.servicios'))
     
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM servicios ORDER BY id_servicio DESC')
+    cursor.execute('SELECT id_servicios AS id_servicio, id_servicios, nombre, descripcion FROM servicios ORDER BY id_servicios DESC')
     servicios_records = cursor.fetchall()
     total_servicios = len(servicios_records)
     cursor.close()
@@ -243,8 +164,8 @@ def servicios():
 def proveedores():
     conn = get_db()
     if conn is None: return "Error de BD"
-    
     if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
         nombre = request.form.get('nombre_proveedor')
         representante = request.form.get('nombre_representante')
         nit = request.form.get('nit')
@@ -253,43 +174,50 @@ def proveedores():
         direccion = request.form.get('direccion')
         servicio_id = request.form.get('servicio_id')
 
+        cursor = conn.cursor()
         try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO proveedores (nombre_proveedor, nombre_representante, nit, telefono, email, direccion, servicio_id) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ''', (nombre, representante, nit, telefono, email, direccion, servicio_id))
+            if id_edit:
+                cursor.execute('''
+                    UPDATE proveedores SET
+                        nombre_proveedor=%s, nombre_representante=%s, nit=%s, telefono=%s, email=%s, direccion=%s, servicio_id=%s
+                    WHERE id_proveedores=%s
+                ''', (nombre, representante, nit, telefono, email, direccion, servicio_id, id_edit))
+            else:
+                cursor.execute('''
+                    INSERT INTO proveedores (nombre_proveedor, nombre_representante, nit, telefono, email, direccion, servicio_id) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ''', (nombre, representante, nit, telefono, email, direccion, servicio_id))
             conn.commit()
-            cursor.close()
         except mysql.connector.IntegrityError:
-            pass # Ignorar NITs duplicados por ahora
-            
-        conn.close()
+            pass
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('dashboard.proveedores'))
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute('''
-        SELECT p.*, s.nombre as servicio_nombre 
+        SELECT p.id_proveedores AS id_proveedor, p.id_proveedores, p.nombre_proveedor, 
+               p.nombre_representante, p.nit, p.telefono, p.email, p.direccion, 
+               p.servicio_id, s.nombre as servicio_nombre 
         FROM proveedores p 
-        LEFT JOIN servicios s ON p.servicio_id = s.id_servicio 
-        ORDER BY p.id_proveedor DESC
+        LEFT JOIN servicios s ON p.servicio_id = s.id_servicios 
+        ORDER BY p.id_proveedores DESC
     ''')
     proveedores_records = cursor.fetchall()
-    
-    cursor.execute('SELECT * FROM servicios')
+    cursor.execute('SELECT id_servicios AS id_servicio, nombre FROM servicios')
     servicios_list = cursor.fetchall()
     total_proveedores = len(proveedores_records)
     cursor.close()
     conn.close()
     return render_template('proveedores.html', proveedores=proveedores_records, servicios=servicios_list, total=total_proveedores)
 
-
 @dashboard_bp.route('/productos', methods=['GET', 'POST'])
 def productos():
     conn = get_db()
     if conn is None: return "Error de BD"
-    
     if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
         nombre_producto = request.form.get('nombre_producto')
         descripcion_producto = request.form.get('descripcion_producto')
         precio_unitario_producto = request.form.get('precio_unitario_producto')
@@ -298,25 +226,37 @@ def productos():
         proveedor_id = request.form.get('proveedor_id')
 
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO productos (nombre_producto, descripcion_producto, precio_unitario_producto, moneda, stock, proveedor_id) 
-            VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (nombre_producto, descripcion_producto, precio_unitario_producto, moneda, stock, proveedor_id))
-        conn.commit()
-        cursor.close()
-        conn.close()
+        try:
+            if id_edit:
+                cursor.execute('''
+                    UPDATE productos SET
+                        nombre_producto=%s, descripcion_producto=%s, precio_unitario_producto=%s, moneda=%s, stock=%s, proveedor_id=%s
+                    WHERE id_productos=%s
+                ''', (nombre_producto, descripcion_producto, precio_unitario_producto, moneda, stock, proveedor_id, id_edit))
+            else:
+                cursor.execute('''
+                    INSERT INTO productos (nombre_producto, descripcion_producto, precio_unitario_producto, moneda, stock, proveedor_id) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (nombre_producto, descripcion_producto, precio_unitario_producto, moneda, stock, proveedor_id))
+            conn.commit()
+        except Exception:
+            pass
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('dashboard.productos'))
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute('''
-        SELECT p.*, pr.nombre_proveedor 
+        SELECT p.id_productos AS id_producto, p.id_productos, p.nombre_producto, 
+               p.descripcion_producto, p.precio_unitario_producto, p.moneda, 
+               p.stock, p.proveedor_id, pr.nombre_proveedor 
         FROM productos p 
-        LEFT JOIN proveedores pr ON p.proveedor_id = pr.id_proveedor 
+        LEFT JOIN proveedores pr ON p.proveedor_id = pr.id_proveedores 
         ORDER BY p.id_productos DESC
     ''')
     productos_records = cursor.fetchall()
-    
-    cursor.execute('SELECT * FROM proveedores')
+    cursor.execute('SELECT id_proveedores AS id_proveedor, nombre_proveedor FROM proveedores')
     proveedores_list = cursor.fetchall()
     total_productos = len(productos_records)
     cursor.close()
@@ -328,8 +268,8 @@ def productos():
 def usuarios():
     conn = get_db()
     if conn is None: return "Error de BD"
-    
     if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
         empresa = request.form.get('nombre_empresa')
         nombre = request.form.get('nombre_completo')
         email = request.form.get('email')
@@ -337,25 +277,40 @@ def usuarios():
         rol = request.form.get('rol')
         telefono = request.form.get('telefono')
         
-        # Encriptando la contraseña
-        p_hash = generate_password_hash(password)
-
+        cursor = conn.cursor()
         try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO usuarios (nombre_empresa, nombre_completo, email, password_hash, rol, telefono) 
-                VALUES (%s, %s, %s, %s, %s, %s)
-            ''', (empresa, nombre, email, p_hash, rol, telefono))
+            if id_edit:
+                if password:
+                    p_hash = generate_password_hash(password)
+                    cursor.execute('''
+                        UPDATE usuarios SET nombre_empresa=%s, nombre=%s, email=%s, password_hash=%s, rol=%s, telefono=%s 
+                        WHERE id_usuarios=%s
+                    ''', (empresa, nombre, email, p_hash, rol, telefono, id_edit))
+                else:
+                    cursor.execute('''
+                        UPDATE usuarios SET nombre_empresa=%s, nombre=%s, email=%s, rol=%s, telefono=%s 
+                        WHERE id_usuarios=%s
+                    ''', (empresa, nombre, email, rol, telefono, id_edit))
+            else:
+                p_hash = generate_password_hash(password) if password else ""
+                cursor.execute('''
+                    INSERT INTO usuarios (nombre_empresa, nombre, email, password_hash, rol, telefono) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (empresa, nombre, email, p_hash, rol, telefono))
             conn.commit()
-            cursor.close()
         except mysql.connector.IntegrityError:
             pass
-            
-        conn.close()
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('dashboard.usuarios'))
 
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM usuarios ORDER BY id_usuario DESC')
+    cursor.execute('''
+        SELECT id_usuarios AS id_usuario, id_usuarios, nombre_empresa, 
+               nombre AS nombre_completo, nombre, email, rol, telefono, fecha_creacion 
+        FROM usuarios ORDER BY id_usuarios DESC
+    ''')
     usuarios_records = cursor.fetchall()
     total_usuarios = len(usuarios_records)
     cursor.close()
@@ -369,61 +324,67 @@ def facturas():
     if conn is None: return "Error de BD"
     
     if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
         cliente_id = request.form.get('cliente_id')
         usuario_id = request.form.get('usuario_id')
-        vendedor_id = request.form.get('vendedor_id')
-        cotizacion_id = request.form.get('cotizacion_id') or None
         total = request.form.get('total')
         estado = request.form.get('estado')
+        if not estado or estado.lower() not in ['pendiente','pagada','anulada']:
+            estado = 'pendiente'
 
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO facturas (cliente_id, usuario_id, vendedor_id, cotizacion_id, total, estado) 
-            VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (cliente_id, usuario_id, vendedor_id, cotizacion_id, total, estado))
-        
-        # Obtener el último ID insertado
-        cursor.execute("SELECT LAST_INSERT_ID() as last_id")
-        res = cursor.fetchone()
-        factura_id = res[0]
-        
-        # Registrar un movimiento contable automático de INGRESO
-        cursor.execute('''
-            INSERT INTO movimientos_contables (descripcion, tipo, monto, factura_id) 
-            VALUES (%s, %s, %s, %s)
-        ''', (f"Venta con Factura #{factura_id}", "INGRESO", total, factura_id))
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
+        try:
+            if id_edit:
+                cursor.execute('''
+                    UPDATE facturas SET cliente_id=%s, usuario_id=%s, total=%s, estado=%s 
+                    WHERE id_factura=%s
+                ''', (cliente_id, usuario_id, total, estado, id_edit))
+            else:
+                cursor.execute('''
+                    INSERT INTO facturas (cliente_id, usuario_id, total, estado) 
+                    VALUES (%s, %s, %s, %s)
+                ''', (cliente_id, usuario_id, total, estado))
+                
+                cursor.execute("SELECT LAST_INSERT_ID() as last_id")
+                res = cursor.fetchone()
+                factura_id = res['last_id'] if (res and isinstance(res, dict)) else (res[0] if res else 0)
+                
+                cursor.execute('''
+                    INSERT INTO movimientos_contables (descripcion, tipo, monto, referencia_id, referencia_tipo) 
+                    VALUES (%s, 'ingreso', %s, %s, 'factura')
+                ''', (f"Venta con Factura #{factura_id}", total, factura_id))
+            conn.commit()
+        except Exception:
+            pass
+        finally:
+            cursor.close()
+            conn.close()
         return redirect(url_for('dashboard.facturas'))
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute('''
-                 SELECT f.*, c.nombre_empresa 
+                 SELECT f.id_factura, f.cliente_id, f.usuario_id, f.fecha, 
+                        f.total, f.estado, c.nombre_empresa 
                  FROM facturas f 
                  LEFT JOIN clientes c ON f.cliente_id = c.id_cliente 
                  ORDER BY f.fecha DESC
     ''')
     facturas_records = cursor.fetchall()
-    
     total_facturas = len(facturas_records)
     
-    cursor.execute("SELECT SUM(total) as s FROM facturas WHERE estado != 'Anulada'")
+    cursor.execute("SELECT SUM(total) as s FROM facturas WHERE estado != 'anulada'")
     ing_res = cursor.fetchone()
     ingresos = ing_res['s'] if ing_res and ing_res['s'] else 0
     
-    cursor.execute("SELECT * FROM clientes")
+    cursor.execute("SELECT id_cliente, nombre_empresa FROM clientes")
     clientes_list = cursor.fetchall()
     
-    cursor.execute("SELECT * FROM usuarios")
+    cursor.execute("SELECT id_usuarios AS id_usuario, nombre AS nombre_completo FROM usuarios")
     usuarios_list = cursor.fetchall()
     
-    # Dummy vendedores
-    cursor.execute("SELECT * FROM vendedor")
-    vendedores_list = cursor.fetchall()
+    vendedores_list = usuarios_list 
     
-    cursor.execute("SELECT * FROM cotizaciones WHERE estado='Aprobada'")
+    cursor.execute("SELECT id_cotizacion, estado FROM cotizaciones WHERE estado='aprobada'")
     cotizaciones_list = cursor.fetchall()
     
     cursor.close()
@@ -439,12 +400,12 @@ def ventas():
     cursor = conn.cursor(dictionary=True)
     cursor.execute('''
         SELECT * FROM movimientos_contables 
-        WHERE tipo = 'INGRESO' 
+        WHERE tipo = 'ingreso' 
         ORDER BY fecha DESC
     ''')
     movimientos = cursor.fetchall()
     
-    total_ingresos = sum([float(m['monto']) for m in movimientos])
+    total_ingresos = sum([float(m['monto']) for m in movimientos if m['monto']])
     total_count = len(movimientos)
     cursor.close()
     conn.close()

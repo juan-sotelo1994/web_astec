@@ -51,12 +51,14 @@
                     <td>{{ doc.usuario_id }}</td>
                     <td>{{ doc.cotizacion_id if doc.cotizacion_id else 'N/A' }}</td>
                     <td>{{ doc.fecha }}</td>
-                    <td><span class="status-badge {% if doc.estado == 'Emitida' %}status-online{% elif doc.estado == 'Anulada' %}status-offline{% else %}status-pending{% endif %}">{{ doc.estado }}</span></td>
+                    <td><span class="status-badge {% if doc.estado == 'pagada' %}status-online{% elif doc.estado == 'anulada' %}status-offline{% else %}status-pending{% endif %}">{{ doc.estado|capitalize }}</span></td>
                     <td>${{ doc.total }}</td>
                     <td style="text-align: center;">
-                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
-                            <i class="fa-solid fa-eye"></i> Detalles
-                        </a>
+                        <button type="button"
+                            data-id="{{ doc.id_factura }}" data-cli="{{ doc.cliente_id }}" data-usr="{{ doc.usuario_id }}" data-cot="{{ doc.cotizacion_id|default('', true) }}" data-est="{{ doc.estado }}" data-tot="{{ doc.total }}"
+                            onclick="editFactura(this.dataset.id, this.dataset.cli, this.dataset.usr, this.dataset.cot, this.dataset.est, this.dataset.tot)" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -67,8 +69,9 @@
 
 <div id="form-container" class="activity-section" style="margin-top: 2rem; display: none;">
     <h2 class="section-title">Generar Factura Única (Maestro)</h2>
-    <form action="{{ url_for('dashboard.facturas') }}" method="POST"
+    <form id="form-factura" action="{{ url_for('dashboard.facturas') }}" method="POST"
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <input type="hidden" name="id_edit" id="id_edit">
 
         <div style="display: flex; flex-direction: column;">
             <label for="cliente_id" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Cliente de Facturación *</label>
@@ -108,9 +111,9 @@
         <div style="display: flex; flex-direction: column;">
             <label for="estado" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Estado *</label>
             <select id="estado" name="estado" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
-                <option value="Emitida">Emitida ✅</option>
-                <option value="Pendiente de Pago">Pendiente de Pago ⏳</option>
-                <option value="Anulada">Anulada ❌</option>
+                <option value="pendiente" selected>Pendiente ⏳</option>
+                <option value="pagada">Pagada ✅</option>
+                <option value="anulada">Anulada ❌</option>
             </select>
         </div>
 
@@ -119,9 +122,10 @@
             <input type="number" step="0.01" id="total" name="total" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
-        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-save"></i> Procesar Factura
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 1rem;">
+            <button type="button" id="btnCancelEdit" onclick="cancelEdit()" style="display:none; padding: 0.75rem 2rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer;">Cancelar</button>
+            <button type="submit" id="btnSubmitForm" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-save"></i> <span id="btnSubmitText">Procesar Factura</span>
             </button>
         </div>
     </form>
@@ -141,7 +145,42 @@
             formContainer.style.display = "none";
             btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Generar Factura';
             btnToggle.style.backgroundColor = '#005b9f';
+            cancelEdit();
         }
+    }
+
+    function editFactura(id, cliId, userId, cotId, estado, total) {
+        var formContainer = document.getElementById("form-container");
+        if (formContainer.style.display === "none") {
+            toggleForm();
+        } else {
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        document.getElementById('id_edit').value = id;
+        document.getElementById('cliente_id').value = cliId;
+        
+        // El input de ID Vendedor aún lo envían, se rellena con el userId o se oculta según la adaptación preexistente
+        const vIdInput = document.getElementById('vendedor_id');
+        if (vIdInput) vIdInput.value = userId;
+
+        const usIdInput = document.getElementById('usuario_id');
+        if (usIdInput) usIdInput.value = userId;
+
+        const cotIdInput = document.getElementById('cotizacion_id');
+        if (cotIdInput) cotIdInput.value = cotId;
+
+        document.getElementById('estado').value = estado;
+        document.getElementById('total').value = total;
+
+        document.getElementById('btnSubmitText').textContent = 'Actualizar Factura';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+    }
+
+    function cancelEdit() {
+        document.getElementById('id_edit').value = '';
+        document.getElementById('form-factura').reset();
+        document.getElementById('btnSubmitText').textContent = 'Procesar Factura';
+        document.getElementById('btnCancelEdit').style.display = 'none';
     }
 </script>
 <style>

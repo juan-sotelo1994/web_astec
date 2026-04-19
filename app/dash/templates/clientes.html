@@ -73,12 +73,14 @@
                     <td>{{ cliente.pais_cliente }}</td>
                     <td>{{ cliente.fecha_creacion }}</td>
                     <td style="text-align: center;">
-                        <a href="#"
-                            style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;"
+                        <button type="button"
+                            data-id="{{ cliente.id_cliente }}" data-num="{{ cliente.numero_identificacion }}" data-tipo="{{ cliente.tipo_identificador }}" data-emp="{{ cliente.nombre_empresa }}" data-sec="{{ cliente.sector_economico|default('', true) }}" data-rep="{{ cliente.nombre_representante|default('', true) }}" data-cont="{{ cliente.contacto_cliente|default('', true) }}" data-dir="{{ cliente.direccion_cliente|default('', true) }}" data-pais="{{ cliente.pais_cliente|default('', true) }}" data-dep="{{ cliente.departamento_cliente|default('', true) }}" data-ciu="{{ cliente.ciudad_cliente|default('', true) }}" data-tel="{{ cliente.telefono|default('', true) }}" data-ema="{{ cliente.email|default('', true) }}"
+                            onclick="editCliente(this.dataset.id, this.dataset.num, this.dataset.tipo, this.dataset.emp, this.dataset.sec, this.dataset.rep, this.dataset.cont, this.dataset.dir, this.dataset.pais, this.dataset.dep, this.dataset.ciu, this.dataset.tel, this.dataset.ema)"
+                            style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;"
                             onmouseover="this.style.backgroundColor='#138496'"
                             onmouseout="this.style.backgroundColor='#17a2b8'">
                             <i class="fa-solid fa-pen-to-square"></i> Editar
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -100,6 +102,7 @@
     <h2 class="section-title">Registrar Nuevo Cliente</h2>
     <form id="form-cliente" action="{{ url_for('dashboard.clientes') }}" method="POST"
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <input type="hidden" name="id_edit" id="id_edit">
 
         <div style="display: flex; flex-direction: column;">
             <label for="tipo_identificador"
@@ -197,11 +200,12 @@
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
-        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit"
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 1rem;">
+            <button type="button" id="btnCancelEdit" onclick="cancelEdit()" style="display:none; padding: 0.75rem 2rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer;">Cancelar</button>
+            <button type="submit" id="btnSubmitForm"
                 style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.3s;"
                 onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                <i class="fa-solid fa-save"></i> Guardar Cliente
+                <i class="fa-solid fa-save"></i> <span id="btnSubmitText">Guardar Cliente</span>
             </button>
         </div>
 
@@ -222,7 +226,40 @@
             formContainer.style.display = "none";
             btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Cliente';
             btnToggle.style.backgroundColor = '#005b9f';
+            cancelEdit();
         }
+    }
+    
+    function editCliente(id, num, tipo, empresa, sector, rep, cont, dir, pais, dep, ciu, tel, email) {
+        var formContainer = document.getElementById("form-container");
+        if (formContainer.style.display === "none") {
+            toggleForm();
+        } else {
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        document.getElementById('id_edit').value = id;
+        document.getElementById('numero_identificacion').value = num;
+        document.getElementById('tipo_identificador').value = tipo;
+        document.getElementById('nombre_empresa').value = empresa;
+        document.getElementById('sector_economico').value = sector;
+        document.getElementById('nombre_representante').value = rep;
+        document.getElementById('contacto_cliente').value = cont;
+        document.getElementById('direccion_cliente').value = dir;
+        document.getElementById('pais_cliente').value = pais;
+        document.getElementById('departamento_cliente').value = dep;
+        document.getElementById('ciudad_cliente').value = ciu;
+        document.getElementById('telefono').value = tel;
+        document.getElementById('email').value = email;
+        
+        document.getElementById('btnSubmitText').textContent = 'Actualizar Cliente';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+    }
+
+    function cancelEdit() {
+        document.getElementById('id_edit').value = '';
+        document.getElementById('form-cliente').reset();
+        document.getElementById('btnSubmitText').textContent = 'Guardar Cliente';
+        document.getElementById('btnCancelEdit').style.display = 'none';
     }
 </script>
 

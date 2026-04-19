@@ -45,9 +45,11 @@
                     <td><span class="status-badge {% if usr.rol == 'Admin' %}status-online{% else %}status-pending{% endif %}">{{ usr.rol }}</span></td>
                     <td>{{ usr.telefono }}</td>
                     <td style="text-align: center;">
-                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                        <button type="button"
+                            data-id="{{ usr.id_usuario }}" data-emp="{{ usr.nombre_empresa|default('', true) }}" data-nom="{{ usr.nombre_completo }}" data-ema="{{ usr.email }}" data-rol="{{ usr.rol|default('Usuario', true) }}" data-tel="{{ usr.telefono|default('', true) }}"
+                            onclick="editUsuario(this.dataset.id, this.dataset.emp, this.dataset.nom, this.dataset.ema, this.dataset.rol, this.dataset.tel)" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
                             <i class="fa-solid fa-pen-to-square"></i> Editar
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -58,8 +60,9 @@
 
 <div id="form-container" class="activity-section" style="margin-top: 2rem; display: none;">
     <h2 class="section-title">Registrar Nuevo Usuario</h2>
-    <form action="{{ url_for('dashboard.usuarios') }}" method="POST"
+    <form id="form-usuario" action="{{ url_for('dashboard.usuarios') }}" method="POST"
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <input type="hidden" name="id_edit" id="id_edit">
 
         <div style="display: flex; flex-direction: column;">
             <label for="nombre_empresa" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Empresa</label>
@@ -78,7 +81,7 @@
 
         <div style="display: flex; flex-direction: column;">
             <label for="password" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Contraseña Temporal *</label>
-            <input type="text" id="password" name="password" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+            <input type="text" id="password" name="password" required placeholder="Escriba la clave" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
         <div style="display: flex; flex-direction: column;">
@@ -94,9 +97,10 @@
             <input type="text" id="telefono" name="telefono" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
-        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-save"></i> Guardar Usuario
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 1rem;">
+            <button type="button" id="btnCancelEdit" onclick="cancelEdit()" style="display:none; padding: 0.75rem 2rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer;">Cancelar</button>
+            <button type="submit" id="btnSubmitForm" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-save"></i> <span id="btnSubmitText">Guardar Usuario</span>
             </button>
         </div>
     </form>
@@ -116,7 +120,42 @@
             formContainer.style.display = "none";
             btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Usuario';
             btnToggle.style.backgroundColor = '#005b9f';
+            cancelEdit();
         }
+    }
+
+    function editUsuario(id, empresa, nombre, email, rol, tel) {
+        var formContainer = document.getElementById("form-container");
+        if (formContainer.style.display === "none") {
+            toggleForm();
+        } else {
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        document.getElementById('id_edit').value = id;
+        document.getElementById('nombre_empresa').value = empresa;
+        document.getElementById('nombre_completo').value = nombre;
+        document.getElementById('email').value = email;
+        document.getElementById('rol').value = rol;
+        document.getElementById('telefono').value = tel;
+
+        const psw = document.getElementById('password');
+        psw.removeAttribute('required');
+        psw.placeholder = "(Dejar en blanco para no cambiar)";
+
+        document.getElementById('btnSubmitText').textContent = 'Actualizar Usuario';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+    }
+
+    function cancelEdit() {
+        document.getElementById('id_edit').value = '';
+        document.getElementById('form-usuario').reset();
+        
+        const psw = document.getElementById('password');
+        psw.setAttribute('required', 'required');
+        psw.placeholder = "Escriba la clave";
+
+        document.getElementById('btnSubmitText').textContent = 'Guardar Usuario';
+        document.getElementById('btnCancelEdit').style.display = 'none';
     }
 </script>
 <style>

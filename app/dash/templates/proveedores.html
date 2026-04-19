@@ -47,9 +47,11 @@
                     <td>{{ prov.email }}</td>
                     <td>{{ prov.servicio_nombre if prov.servicio_nombre else "N/A" }}</td>
                     <td style="text-align: center;">
-                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                        <button type="button"
+                            data-id="{{ prov.id_proveedor }}" data-nom="{{ prov.nombre_proveedor }}" data-rep="{{ prov.nombre_representante|default('', true) }}" data-nit="{{ prov.nit|default('', true) }}" data-tel="{{ prov.telefono|default('', true) }}" data-ema="{{ prov.email|default('', true) }}" data-svc="{{ prov.servicio_id|default('', true) }}" data-dir="{{ prov.direccion|default('', true) }}"
+                            onclick="editProveedor(this.dataset.id, this.dataset.nom, this.dataset.rep, this.dataset.nit, this.dataset.tel, this.dataset.ema, this.dataset.svc, this.dataset.dir)" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
                             <i class="fa-solid fa-pen-to-square"></i> Editar
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -60,8 +62,9 @@
 
 <div id="form-container" class="activity-section" style="margin-top: 2rem; display: none;">
     <h2 class="section-title">Registrar Nuevo Proveedor</h2>
-    <form action="{{ url_for('dashboard.proveedores') }}" method="POST"
+    <form id="form-proveedor" action="{{ url_for('dashboard.proveedores') }}" method="POST"
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <input type="hidden" name="id_edit" id="id_edit">
 
         <div style="display: flex; flex-direction: column;">
             <label for="nombre_proveedor" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Nombre Proveedor *</label>
@@ -103,9 +106,10 @@
             <textarea id="direccion" name="direccion" rows="2" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;"></textarea>
         </div>
 
-        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-save"></i> Guardar Proveedor
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 1rem;">
+            <button type="button" id="btnCancelEdit" onclick="cancelEdit()" style="display:none; padding: 0.75rem 2rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer;">Cancelar</button>
+            <button type="submit" id="btnSubmitForm" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-save"></i> <span id="btnSubmitText">Guardar Proveedor</span>
             </button>
         </div>
     </form>
@@ -125,7 +129,35 @@
             formContainer.style.display = "none";
             btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Proveedor';
             btnToggle.style.backgroundColor = '#005b9f';
+            cancelEdit();
         }
+    }
+
+    function editProveedor(id, nombre, rep, nit, tel, email, s_id, dir) {
+        var formContainer = document.getElementById("form-container");
+        if (formContainer.style.display === "none") {
+            toggleForm();
+        } else {
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        document.getElementById('id_edit').value = id;
+        document.getElementById('nombre_proveedor').value = nombre;
+        document.getElementById('nombre_representante').value = rep;
+        document.getElementById('nit').value = nit;
+        document.getElementById('telefono').value = tel;
+        document.getElementById('email').value = email;
+        document.getElementById('servicio_id').value = s_id;
+        document.getElementById('direccion').value = dir;
+
+        document.getElementById('btnSubmitText').textContent = 'Actualizar Proveedor';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+    }
+
+    function cancelEdit() {
+        document.getElementById('id_edit').value = '';
+        document.getElementById('form-proveedor').reset();
+        document.getElementById('btnSubmitText').textContent = 'Guardar Proveedor';
+        document.getElementById('btnCancelEdit').style.display = 'none';
     }
 </script>
 {% endblock %}

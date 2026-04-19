@@ -36,7 +36,8 @@
 <div class="activity-section">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
         <h2 class="section-title" style="margin-bottom: 0;">Listado de Cotizaciones</h2>
-        <button type="button" onclick="toggleForm()" id="btnToggleForm" style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
+        <button type="button" onclick="toggleForm()" id="btnToggleForm"
+            style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
             <i class="fa-solid fa-plus"></i> Añadir Cotización
         </button>
     </div>
@@ -65,16 +66,23 @@
                     <td>{{ cotizacion.fecha_emision }}</td>
                     <td>{{ cotizacion.fecha_vencimiento }}</td>
                     <td>
-                        <span class="status-badge {% if cotizacion.estado == 'Aprobada' %}status-online{% elif cotizacion.estado == 'Rechazada' %}status-offline{% else %}status-pending{% endif %}">
-                            {{ cotizacion.estado }}
+                        <span
+                            class="status-badge {% if cotizacion.estado == 'aprobada' %}status-online{% elif cotizacion.estado == 'rechazada' %}status-offline{% else %}status-pending{% endif %}">
+                            {{ cotizacion.estado|capitalize }}
                         </span>
                     </td>
                     <td>${{ cotizacion.total }}</td>
                     <td>{{ cotizacion.observaciones }}</td>
                     <td style="text-align: center;">
-                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                        <button type="button" data-id="{{ cotizacion.id_cotizacion }}"
+                            data-cli="{{ cotizacion.cliente_id }}" data-ven="{{ cotizacion.vendedor_id }}"
+                            data-est="{{ cotizacion.estado }}" data-tot="{{ cotizacion.total }}"
+                            onclick="editCotizacion(this.dataset.id, this.dataset.cli, this.dataset.ven, this.dataset.est, this.dataset.tot)"
+                            style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;"
+                            onmouseover="this.style.backgroundColor='#138496'"
+                            onmouseout="this.style.backgroundColor='#17a2b8'">
                             <i class="fa-solid fa-pen-to-square"></i> Editar
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -88,6 +96,7 @@
     <h2 class="section-title">Crear Nueva Cotización</h2>
     <form id="form-cotizacion" action="{{ url_for('dashboard.cotizaciones') }}" method="POST"
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <input type="hidden" name="id_edit" id="id_edit">
 
         <div style="display: flex; flex-direction: column;">
             <label for="cliente_id"
@@ -110,25 +119,27 @@
 
         <div style="display: flex; flex-direction: column;">
             <label for="fecha_vencimiento"
-                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Fecha de Vencimiento *</label>
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Fecha de Vencimiento
+                *</label>
             <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" required
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
         <div style="display: flex; flex-direction: column;">
-            <label for="estado"
-                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Estado *</label>
+            <label for="estado" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Estado
+                *</label>
             <select id="estado" name="estado" required
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
-                <option value="Pendiente" selected>Pendiente</option>
-                <option value="Aprobada">Aprobada</option>
-                <option value="Rechazada">Rechazada</option>
+                <option value="borrador" selected>Borrador</option>
+                <option value="enviada">Enviada</option>
+                <option value="aprobada">Aprobada</option>
+                <option value="rechazada">Rechazada</option>
             </select>
         </div>
 
         <div style="display: flex; flex-direction: column;">
-            <label for="total"
-                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Monto Total *</label>
+            <label for="total" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Monto
+                Total *</label>
             <input type="number" step="0.01" id="total" name="total" required
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
@@ -140,11 +151,13 @@
                 style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;"></textarea>
         </div>
 
-        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-            <button type="submit"
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 1rem;">
+            <button type="button" id="btnCancelEdit" onclick="cancelEdit()"
+                style="display:none; padding: 0.75rem 2rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer;">Cancelar</button>
+            <button type="submit" id="btnSubmitForm"
                 style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.3s;"
                 onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                <i class="fa-solid fa-save"></i> Guardar Cotización
+                <i class="fa-solid fa-save"></i> <span id="btnSubmitText">Guardar Cotización</span>
             </button>
         </div>
 
@@ -155,7 +168,7 @@
     function toggleForm() {
         var formContainer = document.getElementById("form-container");
         var btnToggle = document.getElementById("btnToggleForm");
-        
+
         if (formContainer.style.display === "none") {
             formContainer.style.display = "block";
             btnToggle.innerHTML = '<i class="fa-solid fa-minus"></i> Ocultar Formulario';
@@ -165,7 +178,32 @@
             formContainer.style.display = "none";
             btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Cotización';
             btnToggle.style.backgroundColor = '#005b9f';
+            cancelEdit();
         }
+    }
+
+    function editCotizacion(id, cliId, userId, estado, total) {
+        var formContainer = document.getElementById("form-container");
+        if (formContainer.style.display === "none") {
+            toggleForm();
+        } else {
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        document.getElementById('id_edit').value = id;
+        document.getElementById('cliente_id').value = cliId;
+        document.getElementById('vendedor_id').value = userId;
+        document.getElementById('estado').value = estado;
+        document.getElementById('total').value = total;
+
+        document.getElementById('btnSubmitText').textContent = 'Actualizar Cotización';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+    }
+
+    function cancelEdit() {
+        document.getElementById('id_edit').value = '';
+        document.getElementById('form-cotizacion').reset();
+        document.getElementById('btnSubmitText').textContent = 'Guardar Cotización';
+        document.getElementById('btnCancelEdit').style.display = 'none';
     }
 </script>
 
@@ -174,9 +212,9 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    document.getElementById('form-cotizacion').addEventListener('submit', function(e) {
-        e.preventDefault(); 
-        
+    document.getElementById('form-cotizacion').addEventListener('submit', function (e) {
+        e.preventDefault();
+
         if (!this.checkValidity()) {
             this.reportValidity();
             return;
@@ -198,7 +236,7 @@
             showCancelButton: true,
             confirmButtonColor: '#005b9f',
             cancelButtonColor: '#e74c3c',
-            confirmButtonText: '<i class="fa-solid fa-check"></i> Sí, confirmar',
+            confirmButtonText: document.getElementById('id_edit').value ? '<i class="fa-solid fa-check"></i> Sí, actualizar' : '<i class="fa-solid fa-check"></i> Sí, confirmar',
             cancelButtonText: '<i class="fa-solid fa-xmark"></i> Revisar datos'
         }).then((result) => {
             if (result.isConfirmed) {
