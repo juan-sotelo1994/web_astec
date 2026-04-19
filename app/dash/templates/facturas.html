@@ -1,0 +1,150 @@
+{% extends 'basedash.html' %}
+
+{% block title %}Facturas - ASTECNOLOGÍA{% endblock %}
+{% block page_title %}Facturación de Cliente{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card border-blue">
+        <div class="stat-title">TOTAL FACTURAS</div>
+        <div class="stat-value">{{ total_facturas }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Expedidas en sistema
+        </div>
+    </div>
+    <div class="stat-card border-green">
+        <div class="stat-title">INGRESOS POR FACTURACIÓN</div>
+        <div class="stat-value">{{ ingresos }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-money-check-dollar"></i> Netos registrados
+        </div>
+    </div>
+</div>
+
+<div class="activity-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 class="section-title" style="margin-bottom: 0;">Registro de Facturas de Venta</h2>
+        <button type="button" onclick="toggleForm()" id="btnToggleForm" style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
+            <i class="fa-solid fa-plus"></i> Generar Factura
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Nº Factura</th>
+                    <th>Cliente</th>
+                    <th>ID Empleado Asesor</th>
+                    <th>Cotización Base</th>
+                    <th>Fecha Operación</th>
+                    <th>Estado</th>
+                    <th>Monto Total</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in facturas %}
+                <tr>
+                    <td>{{ doc.id_factura }}</td>
+                    <td>{{ doc.Nombre_empresa if doc.Nombre_empresa else doc.cliente_id }}</td>
+                    <td>{{ doc.usuario_id }}</td>
+                    <td>{{ doc.cotizacion_id if doc.cotizacion_id else 'N/A' }}</td>
+                    <td>{{ doc.fecha }}</td>
+                    <td><span class="status-badge {% if doc.estado == 'Emitida' %}status-online{% elif doc.estado == 'Anulada' %}status-offline{% else %}status-pending{% endif %}">{{ doc.estado }}</span></td>
+                    <td>${{ doc.total }}</td>
+                    <td style="text-align: center;">
+                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                            <i class="fa-solid fa-eye"></i> Detalles
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="form-container" class="activity-section" style="margin-top: 2rem; display: none;">
+    <h2 class="section-title">Generar Factura Única (Maestro)</h2>
+    <form action="{{ url_for('dashboard.facturas') }}" method="POST"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="cliente_id" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Cliente de Facturación *</label>
+            <select id="cliente_id" name="cliente_id" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="">Seleccione...</option>
+                {% for cli in clientes %}
+                <option value="{{ cli.id_clientes }}">{{ cli.Nombre_empresa }} ({{ cli.id_clientes }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="vendedor_id" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Vendedor (Representante) *</label>
+            <input type="number" id="vendedor_id" name="vendedor_id" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;" placeholder="ID Vendedor">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="usuario_id" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Usuario Creador *</label>
+            <select id="usuario_id" name="usuario_id" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="">Seleccione...</option>
+                {% for u in usuarios %}
+                <option value="{{ u.id_usuario }}">{{ u.nombre_completo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="cotizacion_id" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Cotización Relacionada (Opcional)</label>
+            <select id="cotizacion_id" name="cotizacion_id" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="">Ninguna...</option>
+                {% for c in cotizaciones %}
+                <option value="{{ c.id_cotizacion }}">Cotización #{{ c.id_cotizacion }} - ${{ c.total }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="estado" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Estado *</label>
+            <select id="estado" name="estado" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="Emitida">Emitida ✅</option>
+                <option value="Pendiente de Pago">Pendiente de Pago ⏳</option>
+                <option value="Anulada">Anulada ❌</option>
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="total" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Total Facturado *</label>
+            <input type="number" step="0.01" id="total" name="total" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+            <button type="submit" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-save"></i> Procesar Factura
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleForm() {
+        var formContainer = document.getElementById("form-container");
+        var btnToggle = document.getElementById("btnToggleForm");
+        
+        if (formContainer.style.display === "none") {
+            formContainer.style.display = "block";
+            btnToggle.innerHTML = '<i class="fa-solid fa-minus"></i> Ocultar Formulario';
+            btnToggle.style.backgroundColor = '#e74c3c';
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            formContainer.style.display = "none";
+            btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Generar Factura';
+            btnToggle.style.backgroundColor = '#005b9f';
+        }
+    }
+</script>
+<style>
+    .status-pending { background-color: #fef08a; color: #854d0e; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+</style>
+{% endblock %}

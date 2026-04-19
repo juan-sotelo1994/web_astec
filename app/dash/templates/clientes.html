@@ -34,14 +34,20 @@
 
 <!-- Tabla de Clientes -->
 <div class="activity-section">
-    <h2 class="section-title">Listado de Clientes</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 class="section-title" style="margin-bottom: 0;">Listado de Clientes</h2>
+        <button type="button" onclick="toggleForm()" id="btnToggleForm"
+            style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
+            <i class="fa-solid fa-plus"></i> Añadir Cliente
+        </button>
+    </div>
 
     <div class="table-container">
         <table class="activity-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Tipo ID</th>
+                    <th>ID</th>
                     <th>Empresa</th>
                     <th>Sector</th>
                     <th>Representante</th>
@@ -67,7 +73,10 @@
                     <td>{{ cliente.pais_cliente }}</td>
                     <td>{{ cliente.fecha_creacion }}</td>
                     <td style="text-align: center;">
-                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                        <a href="#"
+                            style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;"
+                            onmouseover="this.style.backgroundColor='#138496'"
+                            onmouseout="this.style.backgroundColor='#17a2b8'">
                             <i class="fa-solid fa-pen-to-square"></i> Editar
                         </a>
                     </td>
@@ -76,14 +85,12 @@
             </tbody>
         </table>
     </div>
-    
-    <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; border-top: 1px solid #f0f4f8; padding-top: 1rem;">
+
+    <div style="margin-top: 1.5rem; border-top: 1px solid #f0f4f8; padding-top: 1rem;">
         <div style="font-weight: 600; font-size: 15px; color: #2c3e50;">
-            <i class="fa-solid fa-chart-line text-success" style="color: #27ae60;"></i> Total clientes nuevos este mes: <span style="color: #27ae60; font-size: 18px; margin-left: 5px;">{{ nuevos_clientes }}</span>
+            <i class="fa-solid fa-chart-line text-success" style="color: #27ae60;"></i> Total clientes nuevos este mes:
+            <span style="color: #27ae60; font-size: 18px; margin-left: 5px;">{{ nuevos_clientes }}</span>
         </div>
-        <button type="button" onclick="toggleForm()" id="btnToggleForm" style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
-            <i class="fa-solid fa-plus"></i> Añadir Cliente
-        </button>
     </div>
 
 </div>
@@ -198,7 +205,7 @@
     function toggleForm() {
         var formContainer = document.getElementById("form-container");
         var btnToggle = document.getElementById("btnToggleForm");
-        
+
         if (formContainer.style.display === "none") {
             formContainer.style.display = "block";
             btnToggle.innerHTML = '<i class="fa-solid fa-minus"></i> Ocultar Formulario';
@@ -217,9 +224,9 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    document.getElementById('form-cliente').addEventListener('submit', function(e) {
-        e.preventDefault(); 
-        
+    document.getElementById('form-cliente').addEventListener('submit', function (e) {
+        e.preventDefault();
+
         if (!this.checkValidity()) {
             this.reportValidity();
             return;

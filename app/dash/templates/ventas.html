@@ -1,0 +1,70 @@
+{% extends 'basedash.html' %}
+
+{% block title %}Ventas / Contabilidad - ASTECNOLOGÍA{% endblock %}
+{% block page_title %}Registros de Ventas e Ingresos{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card border-green">
+        <div class="stat-title">INGRESO TOTAL</div>
+        <div class="stat-value" style="font-size: 32px; color: #27ae60;">{{ total_ingresos }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-chart-line"></i> Total de ingresos registrados
+        </div>
+    </div>
+    
+    <div class="stat-card border-blue">
+        <div class="stat-title">NÚMERO DE MOVIMIENTOS</div>
+        <div class="stat-value">{{ total_count }}</div>
+        <div class="stat-subtitle text-info">
+            <i class="fa-solid fa-calculator"></i> Actividades contables de ingreso
+        </div>
+    </div>
+</div>
+
+<div class="activity-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 class="section-title" style="margin-bottom: 0;">Libro de Ingresos de Caja</h2>
+        <span style="padding: 0.5rem 1rem; background-color: #f0f4f8; border-radius: 6px; font-size: 13px; color: #4a5568;">
+            <i class="fa-solid fa-info-circle"></i> Los registros se enlazan automáticamente.
+        </span>
+    </div>
+
+    <div class="table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Fecha de Registro</th>
+                    <th>ID Movimiento</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>ID Factura Relacionada</th>
+                    <th>Monto Recibido</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mov in movimientos %}
+                <tr>
+                    <td>{{ mov.fecha }}</td>
+                    <td>#{{ mov.id_movimiento }}</td>
+                    <td>
+                        <span class="status-badge status-online" style="background-color: #d1fae5; color: #065f46;">
+                            <i class="fa-solid fa-arrow-up"></i> {{ mov.tipo }}
+                        </span>
+                    </td>
+                    <td>{{ mov.descripcion }}</td>
+                    <td>{{ mov.factura_id if mov.factura_id else 'Directo' }}</td>
+                    <td style="font-weight: 600; color: #27ae60;">${{ mov.monto }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem; color: #a0aec0;">
+                        No hay movimientos de ingreso registrados aún.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

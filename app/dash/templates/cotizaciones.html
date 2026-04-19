@@ -1,0 +1,231 @@
+{% extends 'basedash.html' %}
+
+{% block title %}Cotizaciones - ASTECNOLOGÍA{% endblock %}
+{% block page_title %}Gestión de Cotizaciones{% endblock %}
+
+{% block content %}
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card border-blue">
+        <div class="stat-title">TOTAL COTIZACIONES</div>
+        <div class="stat-value">{{ total_cotizaciones }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-file-invoice"></i> Registradas en el sistema
+        </div>
+    </div>
+
+    <div class="stat-card border-orange">
+        <div class="stat-title">COTIZACIONES PENDIENTES</div>
+        <div class="stat-value">{{ pendientes }}</div>
+        <div class="stat-subtitle text-orange" style="color: #e67e22;">
+            <i class="fa-solid fa-clock"></i> Pendientes de revisión
+        </div>
+    </div>
+
+    <div class="stat-card border-green">
+        <div class="stat-title">MONTO TOTAL (Ventas)</div>
+        <div class="stat-value" style="font-size: 32px;">{{ total_sum_fmt }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-money-bill-wave"></i> Proyección de ventas
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Cotizaciones -->
+<div class="activity-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 class="section-title" style="margin-bottom: 0;">Listado de Cotizaciones</h2>
+        <button type="button" onclick="toggleForm()" id="btnToggleForm" style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
+            <i class="fa-solid fa-plus"></i> Añadir Cotización
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Vendedor ID</th>
+                    <th>Emisión</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th>Observaciones</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cotizacion in cotizaciones %}
+                <tr>
+                    <td>{{ cotizacion.id_cotizacion }}</td>
+                    <td>{{ cotizacion.cliente_id }}</td>
+                    <td>{{ cotizacion.vendedor_id }}</td>
+                    <td>{{ cotizacion.fecha_emision }}</td>
+                    <td>{{ cotizacion.fecha_vencimiento }}</td>
+                    <td>
+                        <span class="status-badge {% if cotizacion.estado == 'Aprobada' %}status-online{% elif cotizacion.estado == 'Rechazada' %}status-offline{% else %}status-pending{% endif %}">
+                            {{ cotizacion.estado }}
+                        </span>
+                    </td>
+                    <td>${{ cotizacion.total }}</td>
+                    <td>{{ cotizacion.observaciones }}</td>
+                    <td style="text-align: center;">
+                        <a href="#" style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.backgroundColor='#138496'" onmouseout="this.style.backgroundColor='#17a2b8'">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Formulario para Registrar Cotización (Oculto por defecto) -->
+<div id="form-container" class="activity-section" style="margin-top: 2rem; display: none;">
+    <h2 class="section-title">Crear Nueva Cotización</h2>
+    <form id="form-cotizacion" action="{{ url_for('dashboard.cotizaciones') }}" method="POST"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="cliente_id"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Cliente *</label>
+            <select id="cliente_id" name="cliente_id" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="">Seleccione un cliente...</option>
+                {% for cli in clientes %}
+                <option value="{{ cli.id_clientes }}">{{ cli.Nombre_empresa }} ({{ cli.id_clientes }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="vendedor_id"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">ID Vendedor *</label>
+            <input type="number" id="vendedor_id" name="vendedor_id" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="fecha_vencimiento"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Fecha de Vencimiento *</label>
+            <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="estado"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Estado *</label>
+            <select id="estado" name="estado" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; background-color: #fff; outline: none;">
+                <option value="Pendiente" selected>Pendiente</option>
+                <option value="Aprobada">Aprobada</option>
+                <option value="Rechazada">Rechazada</option>
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="total"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Monto Total *</label>
+            <input type="number" step="0.01" id="total" name="total" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column; grid-column: 1 / -1;">
+            <label for="observaciones"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Observaciones</label>
+            <textarea id="observaciones" name="observaciones" rows="3"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;"></textarea>
+        </div>
+
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+            <button type="submit"
+                style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.3s;"
+                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                <i class="fa-solid fa-save"></i> Guardar Cotización
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    function toggleForm() {
+        var formContainer = document.getElementById("form-container");
+        var btnToggle = document.getElementById("btnToggleForm");
+        
+        if (formContainer.style.display === "none") {
+            formContainer.style.display = "block";
+            btnToggle.innerHTML = '<i class="fa-solid fa-minus"></i> Ocultar Formulario';
+            btnToggle.style.backgroundColor = '#e74c3c';
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            formContainer.style.display = "none";
+            btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Cotización';
+            btnToggle.style.backgroundColor = '#005b9f';
+        }
+    }
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById('form-cotizacion').addEventListener('submit', function(e) {
+        e.preventDefault(); 
+        
+        if (!this.checkValidity()) {
+            this.reportValidity();
+            return;
+        }
+
+        const clienteEl = document.getElementById('cliente_id');
+        const cliente = clienteEl.options[clienteEl.selectedIndex].text;
+        const total = document.getElementById('total').value;
+
+        Swal.fire({
+            title: 'Confirmar Cotización',
+            html: `<div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 14px; margin-top: 10px;">
+                    <p>Vas a registrar una nueva cotización con los siguientes datos principales:</p>
+                    <b>Cliente:</b> ${cliente}<br>
+                    <b>Total:</b> $${total}
+                   </div>
+                   <br>¿Deseas confirmar la cotización?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#005b9f',
+            cancelButtonColor: '#e74c3c',
+            confirmButtonText: '<i class="fa-solid fa-check"></i> Sí, confirmar',
+            cancelButtonText: '<i class="fa-solid fa-xmark"></i> Revisar datos'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Guardando...',
+                    text: 'Registrando cotización',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                        e.target.submit();
+                    }
+                });
+            }
+        });
+    });
+</script>
+<style>
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
