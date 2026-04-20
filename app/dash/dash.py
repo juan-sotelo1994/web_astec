@@ -84,19 +84,41 @@ def cotizaciones():
             estado = 'borrador'
         total = request.form.get('total')
 
+        # dummy usuario for MVP
+        usuario_id = vendedor_id 
+
+        tipos = request.form.getlist('item_tipo[]')
+        ids = request.form.getlist('item_id[]')
+        cants = request.form.getlist('item_cantidad[]')
+        precios = request.form.getlist('item_precio[]')
+
         cursor = conn.cursor()
         try:
             if id_edit:
                 cursor.execute('''
                     UPDATE cotizaciones SET
-                        cliente_id=%s, usuario_id=%s, estado=%s, total=%s
+                        cliente_id=%s, usuario_id=%s, vendedor_id=%s, estado=%s, total=%s
                     WHERE id_cotizacion=%s
-                ''', (cliente_id, vendedor_id, estado, total, id_edit))
+                ''', (cliente_id, usuario_id, vendedor_id, estado, total, id_edit))
+                
+                cursor.execute('DELETE FROM detalle_cotizacion WHERE cotizacion_id=%s', (id_edit,))
+                cotizacion_id = id_edit
             else:
                 cursor.execute('''
-                    INSERT INTO cotizaciones (cliente_id, usuario_id, estado, total) 
-                    VALUES (%s, %s, %s, %s)
-                ''', (cliente_id, vendedor_id, estado, total))
+                    INSERT INTO cotizaciones (cliente_id, usuario_id, vendedor_id, estado, total) 
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (cliente_id, usuario_id, vendedor_id, estado, total))
+                
+                cursor.execute("SELECT LAST_INSERT_ID()")
+                cotizacion_id = cursor.fetchone()[0]
+
+            for tipo, item_id, cant, precio in zip(tipos, ids, cants, precios):
+                if not item_id or not cant or not precio: continue
+                if tipo == 'producto':
+                    cursor.execute('INSERT INTO detalle_cotizacion (cotizacion_id, producto_id, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)', (cotizacion_id, item_id, cant, precio))
+                else:
+                    cursor.execute('INSERT INTO detalle_cotizacion (cotizacion_id, servicio_id, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)', (cotizacion_id, item_id, cant, precio))
+
             conn.commit()
         except Exception:
             pass
@@ -107,9 +129,11 @@ def cotizaciones():
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute('''
-        SELECT id_cotizacion, cliente_id, usuario_id AS vendedor_id, 
-               fecha AS fecha_emision, total, estado 
-        FROM cotizaciones ORDER BY fecha DESC
+        SELECT c.*, cl.nombre_empresa, v.nombre_completo as vendedor_nombre
+        FROM cotizaciones c
+        LEFT JOIN clientes cl ON c.cliente_id = cl.id_cliente
+        LEFT JOIN vendedores v ON c.vendedor_id = v.id_vendedor
+        ORDER BY c.fecha DESC
     ''')
     cotizaciones_records = cursor.fetchall()
     total_cotizaciones = len(cotizaciones_records)
@@ -119,14 +143,21 @@ def cotizaciones():
     cursor.execute("SELECT SUM(total) as t FROM cotizaciones")
     sum_r = cursor.fetchone()
     total_sum = sum_r['t'] if sum_r and sum_r['t'] else 0
-    total_sum_fmt = f"${total_sum:,.2f}"
+    total_sum_fmt = f"${total_sum:,.2f}" if total_sum else "$0.00"
     cursor.execute("SELECT id_cliente, nombre_empresa, numero_identificacion FROM clientes")
     clientes_list = cursor.fetchall()
-    cursor.execute("SELECT id_usuarios AS id_usuario, nombre AS nombre_completo FROM usuarios")
+    
+    cursor.execute("SELECT id_vendedor, nombre_completo FROM vendedores")
     vendedores_list = cursor.fetchall()
+    
+    cursor.execute("SELECT id_productos AS id_producto, nombre_producto, precio_unitario_producto, stock FROM productos")
+    productos_list = cursor.fetchall()
+    cursor.execute("SELECT id_servicios AS id_servicio, nombre FROM servicios")
+    servicios_list = cursor.fetchall()
+
     cursor.close()
     conn.close()
-    return render_template('cotizaciones.html', cotizaciones=cotizaciones_records, total_cotizaciones=total_cotizaciones, pendientes=pendientes, total_sum_fmt=total_sum_fmt, clientes=clientes_list, vendedores=vendedores_list)
+    return render_template('cotizaciones.html', cotizaciones=cotizaciones_records, total_cotizaciones=total_cotizaciones, pendientes=pendientes, total_sum_fmt=total_sum_fmt, clientes=clientes_list, vendedores=vendedores_list, productos=productos_list, servicios=servicios_list)
 
 
 @dashboard_bp.route('/servicios', methods=['GET', 'POST'])
@@ -318,6 +349,150 @@ def usuarios():
     return render_template('usuarios.html', usuarios=usuarios_records, total=total_usuarios)
 
 
+@dashboard_bp.route('/vendedores', methods=['GET', 'POST'])
+def vendedores():
+    conn = get_db()
+    if conn is None: return "Error de BD"
+    if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
+        numero_identificacion = request.form.get('numero_identificacion')
+        nombre_completo = request.form.get('nombre_completo')
+        telefono = request.form.get('telefono')
+        ciudad = request.form.get('ciudad')
+        comision_porcentaje = request.form.get('comision_porcentaje')
+        if not comision_porcentaje:
+            comision_porcentaje = 0.00
+
+        cursor = conn.cursor()
+        try:
+            if id_edit:
+                cursor.execute('''
+                    UPDATE vendedores SET
+                        numero_identificacion=%s, nombre_completo=%s, telefono=%s, ciudad=%s, comision_porcentaje=%s
+                    WHERE id_vendedor=%s
+                ''', (numero_identificacion, nombre_completo, telefono, ciudad, comision_porcentaje, id_edit))
+            else:
+                cursor.execute('''
+                    INSERT INTO vendedores (numero_identificacion, nombre_completo, telefono, ciudad, comision_porcentaje) 
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (numero_identificacion, nombre_completo, telefono, ciudad, comision_porcentaje))
+            conn.commit()
+        except mysql.connector.IntegrityError:
+            pass
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for('dashboard.vendedores'))
+
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM vendedores ORDER BY id_vendedor DESC')
+    vendedores_records = cursor.fetchall()
+    total_vendedores = len(vendedores_records)
+    cursor.close()
+    conn.close()
+    return render_template('vendedores.html', vendedores=vendedores_records, total_vendedores=total_vendedores)
+
+
+@dashboard_bp.route('/ventas', methods=['GET', 'POST'])
+def ventas():
+    conn = get_db()
+    if conn is None: return "Error de BD"
+    
+    if request.method == 'POST':
+        id_edit = request.form.get('id_edit')
+        cliente_id = request.form.get('cliente_id')
+        vendedor_id = request.form.get('vendedor_id')
+        cotizacion_id = request.form.get('cotizacion_id') or None
+        # dummy usuario for MVP, you could read from session later
+        usuario_id = vendedor_id 
+        total = request.form.get('total')
+        metodo_pago = request.form.get('metodo_pago')
+        estado = request.form.get('estado_venta')
+        if not estado or estado.lower() not in ['completada','cancelada','devolucion']:
+            estado = 'completada'
+
+        tipos = request.form.getlist('item_tipo[]')
+        ids = request.form.getlist('item_id[]')
+        cants = request.form.getlist('item_cantidad[]')
+        precios = request.form.getlist('item_precio[]')
+
+        cursor = conn.cursor()
+        try:
+            if id_edit:
+                cursor.execute('''
+                    UPDATE ventas SET cliente_id=%s, vendedor_id=%s, total_venta=%s, metodo_pago=%s, estado_venta=%s, cotizacion_id=%s 
+                    WHERE id_venta=%s
+                ''', (cliente_id, vendedor_id, total, metodo_pago, estado, cotizacion_id, id_edit))
+                venta_id = id_edit
+            else:
+                cursor.execute('''
+                    INSERT INTO ventas (cliente_id, vendedor_id, usuario_id, cotizacion_id, total_venta, metodo_pago, estado_venta) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ''', (cliente_id, vendedor_id, usuario_id, cotizacion_id, total, metodo_pago, estado))
+                
+                cursor.execute("SELECT LAST_INSERT_ID()")
+                venta_id = cursor.fetchone()[0]
+                
+                # Crear movimiento contable por la venta
+                if estado == 'completada':
+                    cursor.execute('''
+                        INSERT INTO movimientos_contables (descripcion, tipo, monto, venta_id) 
+                        VALUES (%s, 'ingreso', %s, %s)
+                    ''', (f"Venta directa #{venta_id}", total, venta_id))
+
+            # Insertar los detalles solo en creación (por la complejidad de los triggers)
+            if not id_edit:
+                for tipo, item_id, cant, precio in zip(tipos, ids, cants, precios):
+                    if not item_id or not cant or not precio: continue
+                    if tipo == 'producto':
+                        cursor.execute('INSERT INTO detalle_venta (venta_id, producto_id, cantidad, precio_unitario_aplicado) VALUES (%s, %s, %s, %s)', (venta_id, item_id, cant, precio))
+                    else:
+                        cursor.execute('INSERT INTO detalle_venta (venta_id, servicio_id, cantidad, precio_unitario_aplicado) VALUES (%s, %s, %s, %s)', (venta_id, item_id, cant, precio))
+
+            conn.commit()
+        except Exception as e:
+            print("Error Ventas:", e)
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for('dashboard.ventas'))
+
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT v.*, c.nombre_empresa 
+        FROM ventas v 
+        LEFT JOIN clientes c ON v.cliente_id = c.id_cliente 
+        ORDER BY v.fecha_venta DESC
+    ''')
+    ventas_records = cursor.fetchall()
+    total_ventas = len(ventas_records)
+    
+    cursor.execute("SELECT SUM(total_venta) as s FROM ventas WHERE estado_venta = 'completada'")
+    ing_res = cursor.fetchone()
+    ingresos = ing_res['s'] if ing_res and ing_res['s'] else 0
+    
+    cursor.execute("SELECT id_cliente, nombre_empresa, numero_identificacion FROM clientes")
+    clientes_list = cursor.fetchall()
+    
+    cursor.execute("SELECT id_vendedor, nombre_completo FROM vendedores")
+    vendedores_list = cursor.fetchall()
+    
+    cursor.execute("SELECT id_cotizacion FROM cotizaciones WHERE estado='aprobada'")
+    cotizaciones_list = cursor.fetchall()
+    
+    cursor.execute("SELECT id_productos AS id_producto, nombre_producto, precio_unitario_producto, stock FROM productos")
+    productos_list = cursor.fetchall()
+    cursor.execute("SELECT id_servicios AS id_servicio, nombre, precio_sugerido FROM servicios")
+    servicios_list = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    return render_template('ventas.html', ventas=ventas_records, total_ventas=total_ventas, 
+                           ingresos_fmt=f"${float(ingresos):,.2f}", clientes=clientes_list, 
+                           vendedores=vendedores_list, cotizaciones=cotizaciones_list, 
+                           productos=productos_list, servicios=servicios_list)
+
+
 @dashboard_bp.route('/facturas', methods=['GET', 'POST'])
 def facturas():
     conn = get_db()
@@ -325,37 +500,33 @@ def facturas():
     
     if request.method == 'POST':
         id_edit = request.form.get('id_edit')
-        cliente_id = request.form.get('cliente_id')
-        usuario_id = request.form.get('usuario_id')
-        total = request.form.get('total')
-        estado = request.form.get('estado')
+        venta_id = request.form.get('venta_id')
+        numero_factura = request.form.get('numero_factura')
+        estado = request.form.get('estado_factura')
         if not estado or estado.lower() not in ['pendiente','pagada','anulada']:
             estado = 'pendiente'
 
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         try:
+            # Recuperar el total de la venta referenciada
+            cursor.execute('SELECT total_venta FROM ventas WHERE id_venta=%s', (venta_id,))
+            v_res = cursor.fetchone()
+            total_f = v_res['total_venta'] if v_res else 0.00
+            
             if id_edit:
                 cursor.execute('''
-                    UPDATE facturas SET cliente_id=%s, usuario_id=%s, total=%s, estado=%s 
+                    UPDATE facturas SET venta_id=%s, numero_factura=%s, estado_factura=%s, total_factura=%s 
                     WHERE id_factura=%s
-                ''', (cliente_id, usuario_id, total, estado, id_edit))
+                ''', (venta_id, numero_factura, estado, total_f, id_edit))
             else:
                 cursor.execute('''
-                    INSERT INTO facturas (cliente_id, usuario_id, total, estado) 
+                    INSERT INTO facturas (venta_id, numero_factura, estado_factura, total_factura) 
                     VALUES (%s, %s, %s, %s)
-                ''', (cliente_id, usuario_id, total, estado))
+                ''', (venta_id, numero_factura, estado, total_f))
                 
-                cursor.execute("SELECT LAST_INSERT_ID() as last_id")
-                res = cursor.fetchone()
-                factura_id = res['last_id'] if (res and isinstance(res, dict)) else (res[0] if res else 0)
-                
-                cursor.execute('''
-                    INSERT INTO movimientos_contables (descripcion, tipo, monto, referencia_id, referencia_tipo) 
-                    VALUES (%s, 'ingreso', %s, %s, 'factura')
-                ''', (f"Venta con Factura #{factura_id}", total, factura_id))
             conn.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            print("Error Facturas:", e)
         finally:
             cursor.close()
             conn.close()
@@ -363,50 +534,17 @@ def facturas():
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute('''
-                 SELECT f.id_factura, f.cliente_id, f.usuario_id, f.fecha, 
-                        f.total, f.estado, c.nombre_empresa 
-                 FROM facturas f 
-                 LEFT JOIN clientes c ON f.cliente_id = c.id_cliente 
-                 ORDER BY f.fecha DESC
+         SELECT f.*, v.fecha_venta, c.nombre_empresa 
+         FROM facturas f
+         JOIN ventas v ON f.venta_id = v.id_venta
+         JOIN clientes c ON v.cliente_id = c.id_cliente
+         ORDER BY f.fecha_emision DESC
     ''')
     facturas_records = cursor.fetchall()
-    total_facturas = len(facturas_records)
     
-    cursor.execute("SELECT SUM(total) as s FROM facturas WHERE estado != 'anulada'")
-    ing_res = cursor.fetchone()
-    ingresos = ing_res['s'] if ing_res and ing_res['s'] else 0
-    
-    cursor.execute("SELECT id_cliente, nombre_empresa FROM clientes")
-    clientes_list = cursor.fetchall()
-    
-    cursor.execute("SELECT id_usuarios AS id_usuario, nombre AS nombre_completo FROM usuarios")
-    usuarios_list = cursor.fetchall()
-    
-    vendedores_list = usuarios_list 
-    
-    cursor.execute("SELECT id_cotizacion, estado FROM cotizaciones WHERE estado='aprobada'")
-    cotizaciones_list = cursor.fetchall()
+    cursor.execute("SELECT id_venta, total_venta, cliente_id FROM ventas")
+    ventas_list = cursor.fetchall()
     
     cursor.close()
     conn.close()
-    return render_template('facturas.html', facturas=facturas_records, total_facturas=total_facturas, ingresos=f"${float(ingresos):,.2f}", clientes=clientes_list, usuarios=usuarios_list, vendedores=vendedores_list, cotizaciones=cotizaciones_list)
-
-
-@dashboard_bp.route('/ventas')
-def ventas():
-    conn = get_db()
-    if conn is None: return "Error de BD"
-    
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute('''
-        SELECT * FROM movimientos_contables 
-        WHERE tipo = 'ingreso' 
-        ORDER BY fecha DESC
-    ''')
-    movimientos = cursor.fetchall()
-    
-    total_ingresos = sum([float(m['monto']) for m in movimientos if m['monto']])
-    total_count = len(movimientos)
-    cursor.close()
-    conn.close()
-    return render_template('ventas.html', movimientos=movimientos, total_ingresos=f"${total_ingresos:,.2f}", total_count=total_count)
+    return render_template('facturas.html', facturas=facturas_records, ventas=ventas_list)

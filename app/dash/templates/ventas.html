@@ -1,70 +1,203 @@
 {% extends 'basedash.html' %}
 
-{% block title %}Ventas / Contabilidad - ASTECNOLOGÍA{% endblock %}
-{% block page_title %}Registros de Ventas e Ingresos{% endblock %}
+{% block title %}Ventas - ASTECNOLOGÍA{% endblock %}
+{% block page_title %}Gestión de Ventas{% endblock %}
 
 {% block content %}
+<!-- Stats Cards -->
 <div class="stats-grid">
     <div class="stat-card border-green">
-        <div class="stat-title">INGRESO TOTAL</div>
-        <div class="stat-value" style="font-size: 32px; color: #27ae60;">{{ total_ingresos }}</div>
+        <div class="stat-title">VENTAS TOTALES</div>
+        <div class="stat-value">{{ total_ventas }}</div>
         <div class="stat-subtitle text-success">
-            <i class="fa-solid fa-chart-line"></i> Total de ingresos registrados
+            <i class="fa-solid fa-chart-line"></i> Total registradas
         </div>
     </div>
-    
+
     <div class="stat-card border-blue">
-        <div class="stat-title">NÚMERO DE MOVIMIENTOS</div>
-        <div class="stat-value">{{ total_count }}</div>
+        <div class="stat-title">INGRESOS (COMPLETADAS)</div>
+        <div class="stat-value">{{ ingresos_fmt }}</div>
         <div class="stat-subtitle text-info">
-            <i class="fa-solid fa-calculator"></i> Actividades contables de ingreso
+            <i class="fa-solid fa-dollar-sign"></i> Total procesado
         </div>
     </div>
 </div>
 
+<!-- Contenedor del Formulario de Venta -->
+<div id="form-container"
+    style="display: none; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-top: 25px; margin-bottom: 25px;">
+    <h3
+        style="margin-top: 0; margin-bottom: 20px; color: #1e293b; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+        <i class="fa-solid fa-cart-arrow-down" style="color: #005b9f;"></i> <span id="formTitle">Registrar Nueva Venta
+            (Carrito)</span>
+    </h3>
+
+    <form id="form-venta" method="POST" action="{{ url_for('dashboard.ventas') }}"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+
+        <input type="hidden" name="id_edit" id="id_edit">
+
+        <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Cliente *</label>
+            <select name="cliente_id" id="cliente_id" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; background: white;">
+                <option value="">Seleccione Cliente...</option>
+                {% for c in clientes %}
+                <option value="{{ c.id_cliente }}">{{ c.numero_identificacion }} - {{ c.nombre_empresa }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Vendedor *</label>
+            <select name="vendedor_id" id="vendedor_id" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; background: white;">
+                <option value="">Seleccione Vendedor...</option>
+                {% for v in vendedores %}
+                <option value="{{ v.id_vendedor }}">{{ v.nombre_completo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Cotización Asignada
+                (Opcional)</label>
+            <select name="cotizacion_id" id="cotizacion_id"
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; background: white;">
+                <option value="">Ninguna</option>
+                {% for cot in cotizaciones %}
+                <option value="{{ cot.id_cotizacion }}">Cotización #{{ cot.id_cotizacion }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Método de Pago
+                *</label>
+            <select name="metodo_pago" id="metodo_pago" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; background: white;">
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="credito">Crédito</option>
+            </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Estado
+                Venta</label>
+            <select name="estado_venta" id="estado_venta" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; background: white;">
+                <option value="completada">Completada (Reduce Stock)</option>
+                <option value="cancelada">Cancelada</option>
+                <option value="devolucion">Devolución</option>
+            </select>
+        </div>
+
+        <!-- Seccion de Líneas (Master-Detail) -->
+        <div style="display: flex; flex-direction: column; grid-column: 1 / -1; margin-top: 15px;">
+            <label style="margin-bottom: 0.5rem; font-weight: 600; font-size: 15px; color: #4a5568;">Detalles (Líneas de
+                Venta)</label>
+            <div id="lineas-container"
+                style="display: grid; gap: 10px; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; background: #fafafa;">
+                <!-- JS Inject -->
+            </div>
+            <button type="button" onclick="addLinea()"
+                style="margin-top: 10px; width: max-content; padding: 0.5rem 1rem; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: 500; font-size: 13px; cursor: pointer;">
+                <i class="fa-solid fa-plus"></i> Agregar Producto / Servicio
+            </button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; grid-column: 1 / -1; align-items: flex-end;">
+            <label for="total" style="margin-bottom: 0.5rem; font-weight: 700; font-size: 16px; color: #4a5568;">Gran
+                Total: $</label>
+            <input type="number" step="0.01" id="total" name="total" required readonly
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 16px; font-weight: 700; width: 250px; background-color: #f1f5f9; outline: none;">
+        </div>
+
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 1rem;">
+            <button type="button" id="btnCancelEdit" onclick="cancelEdit()"
+                style="display:none; padding: 0.75rem 2rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer;">Cancelar</button>
+            <button type="submit" id="btnSubmitForm"
+                style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-coins"></i> <span id="btnSubmitText">Procesar Venta</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabla de Ventas Registradas -->
 <div class="activity-section">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-        <h2 class="section-title" style="margin-bottom: 0;">Libro de Ingresos de Caja</h2>
-        <span style="padding: 0.5rem 1rem; background-color: #f0f4f8; border-radius: 6px; font-size: 13px; color: #4a5568;">
-            <i class="fa-solid fa-info-circle"></i> Los registros se enlazan automáticamente.
-        </span>
+        <h2 class="section-title" style="margin-bottom: 0;">Historial de Ventas</h2>
+        <button type="button" onclick="toggleForm()" id="btnToggleForm"
+            style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-plus"></i> Nueva Venta
+        </button>
     </div>
 
     <div class="table-container">
         <table class="activity-table">
             <thead>
                 <tr>
-                    <th>Fecha de Registro</th>
-                    <th>ID Movimiento</th>
-                    <th>Tipo</th>
-                    <th>Descripción</th>
-                    <th>ID Factura Relacionada</th>
-                    <th>Monto Recibido</th>
+                    <th>ID Venta</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Método P.</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th style="text-align: center;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                {% for mov in movimientos %}
+                {% for v in ventas %}
                 <tr>
-                    <td>{{ mov.fecha }}</td>
-                    <td>#{{ mov.id_movimiento }}</td>
+                    <td><b>#{{ v.id_venta }}</b></td>
+                    <td>{{ v.fecha_venta }}</td>
+                    <td>{{ v.nombre_empresa }}</td>
+                    <td style="text-transform: capitalize;">{{ v.metodo_pago }}</td>
+                    <td style="font-weight: bold;">${{ v.total_venta }}</td>
                     <td>
-                        <span class="status-badge status-online" style="background-color: #d1fae5; color: #065f46;">
-                            <i class="fa-solid fa-arrow-up"></i> {{ mov.tipo }}
+                        {% if v.estado_venta == 'completada' %}
+                        <span class="status-badge" style="background-color: #d1fae5; color: #065f46;">
+                            {{ v.estado_venta|capitalize }}
                         </span>
+                        {% elif v.estado_venta == 'cancelada' %}
+                        <span class="status-badge" style="background-color: #fee2e2; color: #991b1b;">
+                            {{ v.estado_venta|capitalize }}
+                        </span>
+                        {% else %}
+                        <span class="status-badge" style="background-color: #fef3c7; color: #92400e;">
+                            {{ v.estado_venta|capitalize }}
+                        </span>
+                        {% endif %}
                     </td>
-                    <td>{{ mov.descripcion }}</td>
-                    <td>{{ mov.factura_id if mov.factura_id else 'Directo' }}</td>
-                    <td style="font-weight: 600; color: #27ae60;">${{ mov.monto }}</td>
+                    <td style="text-align: center;">
+                        <button type="button"
+                            data-id="{{ v.id_venta }}" data-cliente="{{ v.cliente_id }}" data-vendedor="{{ v.vendedor_id }}"
+                            data-cotizacion="{{ v.cotizacion_id or '' }}" data-metodo="{{ v.metodo_pago }}"
+                            data-estado="{{ v.estado_venta }}" data-total="{{ v.total_venta }}"
+                            onclick="editVenta(this.dataset.id, this.dataset.cliente, this.dataset.vendedor, this.dataset.cotizacion, this.dataset.metodo, this.dataset.estado, this.dataset.total)"
+                            style="background: none; border: none; color: #005b9f; cursor: pointer; margin-right: 10px;"
+                            title="Editar Parcial">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <!-- Aquí podríamos poner un modal para ver detalles -->
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 2rem; color: #a0aec0;">
-                        No hay movimientos de ingreso registrados aún.
-                    </td>
+                    <td colspan="7" style="text-align: center; color: #64748b;">No hay ventas registradas.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<div id="json-data-container" data-productos="{{ productos|tojson|forceescape }}"
+    data-servicios="{{ servicios|tojson|forceescape }}" style="display: none;"></div>
+
+<script src="{{ url_for('static', filename='js/ventas.js') }}"></script>
+
 {% endblock %}

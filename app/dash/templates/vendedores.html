@@ -1,0 +1,167 @@
+{% extends 'basedash.html' %}
+
+{% block title %}Vendedores - ASTECNOLOGÍA{% endblock %}
+{% block page_title %}Gestión de Vendedores{% endblock %}
+
+{% block content %}
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card border-blue">
+        <div class="stat-title">TOTAL VENDEDORES</div>
+        <div class="stat-value">{{ total_vendedores }}</div>
+        <div class="stat-subtitle text-success">
+            <i class="fa-solid fa-user-tie"></i> Equipo comercial
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Vendedores -->
+<div class="activity-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 class="section-title" style="margin-bottom: 0;">Listado de Vendedores</h2>
+        <button type="button" onclick="toggleForm()" id="btnToggleForm"
+            style="padding: 0.75rem 1.5rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s;">
+            <i class="fa-solid fa-plus"></i> Añadir Vendedor
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Identificación</th>
+                    <th>Nombre Completo</th>
+                    <th>Teléfono</th>
+                    <th>Ciudad</th>
+                    <th>Comisión %</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vendedores %}
+                <tr>
+                    <td style="font-weight: 500;">{{ v.numero_identificacion }}</td>
+                    <td>{{ v.nombre_completo }}</td>
+                    <td>{{ v.telefono }}</td>
+                    <td>{{ v.ciudad }}</td>
+                    <td class="text-success">{{ v.comision_porcentaje }}%</td>
+                    <td style="text-align: center;">
+                        <button type="button" class="btn-edit" 
+                            data-id="{{ v.id_vendedor }}"
+                            data-nid="{{ v.numero_identificacion }}"
+                            data-nombre="{{ v.nombre_completo }}"
+                            data-tel="{{ v.telefono }}"
+                            data-ciudad="{{ v.ciudad }}"
+                            data-comision="{{ v.comision_porcentaje }}"
+                            onclick="editVendedor(this)"
+                            style="background: none; border: none; color: #005b9f; cursor: pointer; margin-right: 10px;" title="Editar">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #64748b;">No hay vendedores registrados en el sistema.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Contenedor del Formulario (Oculto por defecto) -->
+<div id="form-container" style="display: none; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-top: 25px;">
+    <h3 style="margin-top: 0; margin-bottom: 20px; color: #1e293b; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+        <i class="fa-solid fa-id-card-clip" style="color: #005b9f;"></i> <span id="formTitle">Registrar Nuevo Vendedor</span>
+    </h3>
+    
+    <form id="form-vendedor" method="POST" action="{{ url_for('dashboard.vendedores') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        
+        <input type="hidden" name="id_edit" id="id_edit">
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="numero_identificacion" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Número de Identificación *</label>
+            <input type="text" id="numero_identificacion" name="numero_identificacion" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s;">
+        </div>
+        
+        <div style="display: flex; flex-direction: column;">
+            <label for="nombre_completo" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Nombre Completo *</label>
+            <input type="text" id="nombre_completo" name="nombre_completo" required style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="telefono" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Teléfono</label>
+            <input type="tel" id="telefono" name="telefono" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="ciudad" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Ciudad</label>
+            <input type="text" id="ciudad" name="ciudad" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="comision_porcentaje" style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Comisión (%)</label>
+            <input type="number" step="0.01" id="comision_porcentaje" name="comision_porcentaje" value="0.00" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
+        </div>
+
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 1rem;">
+            <button type="button" id="btnCancelEdit" onclick="cancelEdit()" style="display:none; padding: 0.75rem 2rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer;">Cancelar</button>
+            <button type="submit" id="btnSubmitForm" style="padding: 0.75rem 2rem; background-color: #005b9f; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-save"></i> <span id="btnSubmitText">Guardar Vendedor</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleForm() {
+        var formContainer = document.getElementById("form-container");
+        var btnToggle = document.getElementById("btnToggleForm");
+        
+        if (formContainer.style.display === "none") {
+            formContainer.style.display = "block";
+            btnToggle.innerHTML = '<i class="fa-solid fa-minus"></i> Ocultar Formulario';
+            btnToggle.style.backgroundColor = '#e74c3c';
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            formContainer.style.display = "none";
+            btnToggle.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir Vendedor';
+            btnToggle.style.backgroundColor = '#005b9f';
+            cancelEdit(); // Limpia al cerrar
+        }
+    }
+
+    function editVendedor(buttonElement) {
+        var dataset = buttonElement.dataset;
+        
+        document.getElementById('id_edit').value = dataset.id;
+        document.getElementById('numero_identificacion').value = dataset.nid;
+        document.getElementById('nombre_completo').value = dataset.nombre;
+        document.getElementById('telefono').value = dataset.tel;
+        document.getElementById('ciudad').value = dataset.ciudad;
+        document.getElementById('comision_porcentaje').value = dataset.comision;
+        
+        document.getElementById('formTitle').textContent = 'Editar Vendedor';
+        document.getElementById('btnSubmitText').textContent = 'Actualizar Vendedor';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+        
+        var formContainer = document.getElementById("form-container");
+        if (formContainer.style.display === "none") {
+            toggleForm();
+        } else {
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    function cancelEdit() {
+        document.getElementById('id_edit').value = '';
+        document.getElementById('form-vendedor').reset();
+        document.getElementById('formTitle').textContent = 'Registrar Nuevo Vendedor';
+        document.getElementById('btnSubmitText').textContent = 'Guardar Vendedor';
+        document.getElementById('btnCancelEdit').style.display = 'none';
+        document.getElementById('comision_porcentaje').value = "0.00";
+    }
+</script>
+
+{% endblock %}
