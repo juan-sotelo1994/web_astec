@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for, jsonify
 from . import dashboard_bp
 from werkzeug.security import generate_password_hash
 import mysql.connector
@@ -79,6 +79,9 @@ def cotizaciones():
         id_edit = request.form.get('id_edit')
         cliente_id = request.form.get('cliente_id')
         vendedor_id = request.form.get('vendedor_id') or request.form.get('usuario_id')
+        fecha_emision = request.form.get('fecha_emision') or None
+        fecha_vencimiento = request.form.get('fecha_vencimiento') or None
+        observaciones = request.form.get('observaciones') or None
         estado = request.form.get('estado')
         if not estado or estado.lower() not in ['borrador','enviada','aprobada','rechazada']:
             estado = 'borrador'
@@ -97,17 +100,17 @@ def cotizaciones():
             if id_edit:
                 cursor.execute('''
                     UPDATE cotizaciones SET
-                        cliente_id=%s, usuario_id=%s, vendedor_id=%s, estado=%s, total=%s
+                        cliente_id=%s, usuario_id=%s, vendedor_id=%s, estado=%s, total=%s, fecha_emision=%s, fecha_vencimiento=%s, observaciones=%s
                     WHERE id_cotizacion=%s
-                ''', (cliente_id, usuario_id, vendedor_id, estado, total, id_edit))
+                ''', (cliente_id, usuario_id, vendedor_id, estado, total, fecha_emision, fecha_vencimiento, observaciones, id_edit))
                 
                 cursor.execute('DELETE FROM detalle_cotizacion WHERE cotizacion_id=%s', (id_edit,))
                 cotizacion_id = id_edit
             else:
                 cursor.execute('''
-                    INSERT INTO cotizaciones (cliente_id, usuario_id, vendedor_id, estado, total) 
-                    VALUES (%s, %s, %s, %s, %s)
-                ''', (cliente_id, usuario_id, vendedor_id, estado, total))
+                    INSERT INTO cotizaciones (cliente_id, usuario_id, vendedor_id, estado, total, fecha_emision, fecha_vencimiento, observaciones) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (cliente_id, usuario_id, vendedor_id, estado, total, fecha_emision, fecha_vencimiento, observaciones))
                 
                 cursor.execute("SELECT LAST_INSERT_ID()")
                 cotizacion_id = cursor.fetchone()[0]
@@ -493,6 +496,27 @@ def ventas():
                            productos=productos_list, servicios=servicios_list)
 
 
+@dashboard_bp.route('/api/cotizacion/<int:id>', methods=['GET'])
+def api_get_cotizacion(id):
+    conn = get_db()
+    if conn is None: return jsonify({"error": "DB"}), 500
+    
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT cliente_id, vendedor_id, total FROM cotizaciones WHERE id_cotizacion=%s', (id,))
+    cotizacion = cursor.fetchone()
+    
+    if not cotizacion:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Not found"}), 404
+        
+    cursor.execute('SELECT producto_id, servicio_id, cantidad, precio_unitario FROM detalle_cotizacion WHERE cotizacion_id=%s', (id,))
+    lineas = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    return jsonify({"cotizacion": cotizacion, "lineas": lineas})
+
 @dashboard_bp.route('/facturas', methods=['GET', 'POST'])
 def facturas():
     conn = get_db()
@@ -548,3 +572,140 @@ def facturas():
     cursor.close()
     conn.close()
     return render_template('facturas.html', facturas=facturas_records, ventas=ventas_list)
+
+@dashboard_bp.route('/imprimir/<tipo_doc>/<int:id_doc>')
+def imprimir_documento(tipo_doc, id_doc):
+    if tipo_doc not in ['cotizacion', 'venta', 'factura']:
+        return "Tipo de documento no válido", 400
+
+    conn = get_db()
+    if conn is None: return "Error de conexión a BD", 500
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    data = {
+        "tipo": tipo_doc.capitalize(),
+        "id_format": f"DOC-{id_doc}",
+        "fecha": "",
+        "vendedor": "",
+        "total": 0,
+        "observaciones": ""
+    }
+    
+    doc = None
+    lines_raw = []
+
+    try:
+        if tipo_doc == 'cotizacion':
+            cursor.execute('''
+                SELECT c.*, cl.*, v.nombre_completo as vendedor_nombre
+                FROM cotizaciones c
+                JOIN clientes cl ON c.cliente_id = cl.id_cliente
+                JOIN vendedores v ON c.vendedor_id = v.id_vendedor
+                WHERE c.id_cotizacion = %s
+            ''', (id_doc,))
+            doc = cursor.fetchone()
+            if not doc: return "Cotización no encontrada", 404
+            
+            data['id_format'] = f"COT-{id_doc}"
+            data['titulo'] = "Formato de Cotización"
+            fecha_out = doc.get('fecha_emision') or doc['fecha']
+            data['fecha'] = fecha_out.strftime('%Y-%m-%d') if hasattr(fecha_out, 'strftime') else str(fecha_out)
+            data['vendedor'] = doc['vendedor_nombre']
+            data['total'] = doc['total']
+            data['observaciones'] = doc.get('observaciones') or "No incluye IVA (sujeto a cambios)."
+            
+            cursor.execute('''
+                SELECT d.cantidad, d.precio_unitario as precio, d.producto_id, d.servicio_id,
+                       p.nombre_producto, p.descripcion_producto, s.nombre as nombre_servicio, s.descripcion as desc_servicio
+                FROM detalle_cotizacion d
+                LEFT JOIN productos p ON d.producto_id = p.id_productos
+                LEFT JOIN servicios s ON d.servicio_id = s.id_servicios
+                WHERE d.cotizacion_id = %s
+            ''', (id_doc,))
+            lines_raw = cursor.fetchall()
+            
+        elif tipo_doc == 'venta':
+            cursor.execute('''
+                SELECT v.*, cl.*, vend.nombre_completo as vendedor_nombre
+                FROM ventas v
+                JOIN clientes cl ON v.cliente_id = cl.id_cliente
+                JOIN vendedores vend ON v.vendedor_id = vend.id_vendedor
+                WHERE v.id_venta = %s
+            ''', (id_doc,))
+            doc = cursor.fetchone()
+            if not doc: return "Venta no encontrada", 404
+            
+            data['id_format'] = f"VEN-{id_doc}"
+            data['titulo'] = "Formato de Venta"
+            data['fecha'] = doc['fecha_venta'].strftime('%Y-%m-%d') if hasattr(doc['fecha_venta'], 'strftime') else str(doc['fecha_venta'])
+            data['vendedor'] = doc['vendedor_nombre']
+            data['total'] = doc['total_venta']
+            data['observaciones'] = f"Método de pago: {str(doc.get('metodo_pago','')).capitalize()}\\nEstado: {str(doc.get('estado_venta','')).capitalize()}"
+            
+            cursor.execute('''
+                SELECT d.cantidad, d.precio_unitario_aplicado as precio, d.producto_id, d.servicio_id,
+                       p.nombre_producto, p.descripcion_producto, s.nombre as nombre_servicio, s.descripcion as desc_servicio
+                FROM detalle_venta d
+                LEFT JOIN productos p ON d.producto_id = p.id_productos
+                LEFT JOIN servicios s ON d.servicio_id = s.id_servicios
+                WHERE d.venta_id = %s
+            ''', (id_doc,))
+            lines_raw = cursor.fetchall()
+            
+        elif tipo_doc == 'factura':
+            cursor.execute('''
+                SELECT f.*, v.fecha_venta, v.metodo_pago, cl.*, vend.nombre_completo as vendedor_nombre
+                FROM facturas f
+                JOIN ventas v ON f.venta_id = v.id_venta
+                JOIN clientes cl ON v.cliente_id = cl.id_cliente
+                JOIN vendedores vend ON v.vendedor_id = vend.id_vendedor
+                WHERE f.id_factura = %s
+            ''', (id_doc,))
+            doc = cursor.fetchone()
+            if not doc: return "Factura no encontrada", 404
+            
+            data['id_format'] = f"FAC-{doc['numero_factura']}"
+            data['titulo'] = "Documento Equivalente de Factura"
+            data['fecha'] = doc['fecha_emision'].strftime('%Y-%m-%d') if hasattr(doc['fecha_emision'], 'strftime') else str(doc['fecha_emision'])
+            data['vendedor'] = doc['vendedor_nombre']
+            data['total'] = doc['total_factura']
+            data['observaciones'] = f"Aso. Venta #{doc['venta_id']}. Pago: {str(doc.get('metodo_pago','')).capitalize()}"
+            
+            cursor.execute('''
+                SELECT d.cantidad, d.precio_unitario_aplicado as precio, d.producto_id, d.servicio_id,
+                       p.nombre_producto, p.descripcion_producto, s.nombre as nombre_servicio, s.descripcion as desc_servicio
+                FROM detalle_venta d
+                LEFT JOIN productos p ON d.producto_id = p.id_productos
+                LEFT JOIN servicios s ON d.servicio_id = s.id_servicios
+                WHERE d.venta_id = %s
+            ''', (doc['venta_id'],))
+            lines_raw = cursor.fetchall()
+
+    except Exception as e:
+        print("Error en impresión:", e)
+    finally:
+        cursor.close()
+        conn.close()
+
+    lineas = []
+    for lr in lines_raw:
+        if lr['producto_id']:
+            no_parte = f"PRD-{lr['producto_id']}"
+            desc = lr['nombre_producto']
+            det = lr['descripcion_producto'] or "S/D"
+        else:
+            no_parte = f"SRV-{lr['servicio_id']}"
+            desc = lr['nombre_servicio']
+            det = lr['desc_servicio'] or "Servicio Profesional"
+            
+        lineas.append({
+            'no_parte': no_parte,
+            'desc': desc,
+            'detalle': det,
+            'cant': lr['cantidad'],
+            'v_unitario': float(lr.get('precio', 0)),
+            'v_total': float(lr.get('precio', 0) * lr.get('cantidad', 0))
+        })
+        
+    return render_template('print_layout.html', data=data, cliente=doc, lineas=lineas)

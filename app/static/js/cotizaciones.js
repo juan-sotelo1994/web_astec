@@ -110,18 +110,29 @@ function toggleForm() {
     }
 }
 
-function editCotizacion(id, cliId, userId, estado, total) {
+function editCotizacion(btn) {
     var formContainer = document.getElementById("form-container");
     if (formContainer.style.display === "none") {
         toggleForm();
     } else {
         formContainer.scrollIntoView({ behavior: 'smooth' });
     }
-    document.getElementById('id_edit').value = id;
-    document.getElementById('cliente_id').value = cliId;
-    document.getElementById('vendedor_id').value = userId;
-    document.getElementById('estado').value = estado;
-    document.getElementById('total').value = total;
+    document.getElementById('id_edit').value = btn.dataset.id;
+    document.getElementById('cliente_id').value = btn.dataset.cli;
+    document.getElementById('vendedor_id').value = btn.dataset.ven;
+
+    if(document.getElementById('fecha_emision')) {
+        document.getElementById('fecha_emision').value = btn.dataset.emi || '';
+    }
+    if(document.getElementById('fecha_vencimiento')) {
+        document.getElementById('fecha_vencimiento').value = btn.dataset.venc || '';
+    }
+    if(document.getElementById('observaciones')) {
+        document.getElementById('observaciones').value = btn.dataset.obs || '';
+    }
+
+    document.getElementById('estado').value = btn.dataset.est;
+    document.getElementById('total').value = btn.dataset.tot;
 
     document.getElementById('btnSubmitText').textContent = 'Actualizar Cotización';
     document.getElementById('btnCancelEdit').style.display = 'block';

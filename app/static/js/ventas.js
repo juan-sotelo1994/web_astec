@@ -21,6 +21,51 @@ document.addEventListener("DOMContentLoaded", () => {
             precio: parseFloat(s.precio_sugerido || 0)
         }));
     }
+
+    const cotSelect = document.getElementById('cotizacion_id');
+    if (cotSelect) {
+        cotSelect.addEventListener('change', async function() {
+            const cotId = this.value;
+            if (!cotId) return;
+
+            try {
+                const response = await fetch(`/api/cotizacion/${cotId}`);
+                if (!response.ok) throw new Error('Error en API');
+                const data = await response.json();
+                
+                if (data.cotizacion) {
+                    // Cargar datos principales
+                    document.getElementById('cliente_id').value = data.cotizacion.cliente_id || '';
+                    document.getElementById('vendedor_id').value = data.cotizacion.vendedor_id || '';
+                    document.getElementById('total').value = parseFloat(data.cotizacion.total).toFixed(2);
+                    
+                    // Cargar líneas
+                    const container = document.getElementById('lineas-container');
+                    container.innerHTML = '';
+                    
+                    data.lineas.forEach(linea => {
+                        addLinea();
+                        const rows = container.querySelectorAll('.linea-row');
+                        const addedRow = rows[rows.length - 1];
+                        
+                        const tipoSel = addedRow.querySelector('.line-tipo');
+                        tipoSel.value = linea.producto_id ? 'producto' : 'servicio';
+                        changeLineType(tipoSel);
+                        
+                        const itemSel = addedRow.querySelector('.line-item');
+                        itemSel.value = linea.producto_id || linea.servicio_id;
+                        
+                        addedRow.querySelector('.line-qty').value = linea.cantidad;
+                        addedRow.querySelector('.line-precio').value = linea.precio_unitario;
+                    });
+                    calculateTotal();
+                }
+            } catch(e) {
+                console.error("Error cargando cotización:", e);
+                alert("Hubo un error al arrastrar la cotización.");
+            }
+        });
+    }
 });
 
 function calculateTotal() {

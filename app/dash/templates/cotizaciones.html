@@ -76,13 +76,21 @@
                     <td style="text-align: center;">
                         <button type="button" data-id="{{ cotizacion.id_cotizacion }}"
                             data-cli="{{ cotizacion.cliente_id }}" data-ven="{{ cotizacion.vendedor_id }}"
+                            data-emi="{{ cotizacion.fecha_emision or '' }}" data-venc="{{ cotizacion.fecha_vencimiento or '' }}"
                             data-est="{{ cotizacion.estado }}" data-tot="{{ cotizacion.total }}"
-                            onclick="editCotizacion(this.dataset.id, this.dataset.cli, this.dataset.ven, this.dataset.est, this.dataset.tot)"
+                            data-obs="{{ cotizacion.observaciones or '' }}"
+                            onclick="editCotizacion(this)"
                             style="padding: 0.4rem 0.8rem; background-color: #17a2b8; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 0.3s; display: inline-flex; align-items: center; gap: 4px;"
                             onmouseover="this.style.backgroundColor='#138496'"
                             onmouseout="this.style.backgroundColor='#17a2b8'">
                             <i class="fa-solid fa-pen-to-square"></i> Editar
                         </button>
+                        <a href="{{ url_for('dashboard.imprimir_documento', tipo_doc='cotizacion', id_doc=cotizacion.id_cotizacion) }}" target="_blank"
+                            style="padding: 0.4rem 0.8rem; background-color: #6c757d; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; margin-left: 5px; display: inline-flex; align-items: center; gap: 4px;"
+                            onmouseover="this.style.backgroundColor='#5a6268'"
+                            onmouseout="this.style.backgroundColor='#6c757d'">
+                            <i class="fa-solid fa-print"></i> PDF
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -120,6 +128,14 @@
                 <option value="{{ vend.id_vendedor }}">{{ vend.nombre_completo }}</option>
                 {% endfor %}
             </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="fecha_emision"
+                style="margin-bottom: 0.5rem; font-weight: 500; font-size: 14px; color: #4a5568;">Fecha de Emisión
+                *</label>
+            <input type="date" id="fecha_emision" name="fecha_emision" required
+                style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none;">
         </div>
 
         <div style="display: flex; flex-direction: column;">

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ data.titulo }} - {{ data.id_format }}</title>
+    <style>
+        /* CSS Reset for Print */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm 15mm;
+            }
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 11px;
+            color: #000;
+            margin: 0;
+            padding: 20px;
+            background: #fff;
+        }
+
+        .document-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Top Header */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+            font-size: 10px;
+        }
+        .header-top-left table {
+            border-collapse: collapse;
+        }
+        .header-top-left td {
+            padding: 2px 10px 2px 0;
+            vertical-align: top;
+            color: #333;
+        }
+        .header-top-right {
+            text-align: right;
+        }
+        .logo-placeholder {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .logo-placeholder span {
+            font-size: 10px;
+            color: #0056b3;
+            font-weight: normal;
+        }
+
+        /* Title Box */
+        .title-box {
+            border: 2px solid #000;
+            text-align: center;
+            padding: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            font-style: italic;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        /* Sub Headers (Blue block 1 & 2) */
+        .subheaders {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .subheader-table {
+            width: 48%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+        }
+        .subheader-table th {
+            background-color: #1a4d9c; /* Dark blue */
+            color: #fff;
+            padding: 4px 8px;
+            text-align: right;
+            border: 1px solid #000;
+            width: 35%;
+            font-weight: bold;
+        }
+        .subheader-table td {
+            padding: 4px 8px;
+            border: 1px solid #000;
+            text-align: left;
+        }
+        .subheader-table a {
+            color: #0000ff;
+            text-decoration: underline;
+        }
+
+        /* 2-Column Info Sections */
+        .info-sections {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .info-block {
+            width: 48%;
+            border: 2px solid #000;
+        }
+        .info-block-header {
+            background-color: #1a4d9c;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            padding: 4px;
+            border-bottom: 2px solid #000;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-table td {
+            padding: 3px 6px;
+            border: 1px solid #000;
+        }
+        /* Alternating row colors handled below */
+        
+        .info-table tr:nth-child(odd) {
+            background-color: #fff;
+        }
+        .info-table tr:nth-child(even) {
+            background-color: #fce4d6; /* Peach color for alternate rows */
+        }
+
+        .info-table td.col-label {
+            font-weight: bold;
+            text-align: right;
+            width: 40%;
+        }
+        .info-table td.col-value {
+            text-align: left;
+            width: 60%;
+        }
+
+        /* Items Table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            margin-bottom: 15px;
+        }
+        .items-table th {
+            background-color: #0070c0; /* Medium dark blue for headers */
+            color: #fff;
+            font-weight: bold;
+            padding: 6px;
+            border: 1px solid #000;
+            text-align: center;
+        }
+        .items-table td {
+            padding: 6px;
+            border: 1px solid #000;
+            vertical-align: middle;
+        }
+        .col-cant { text-align: center; }
+        .col-valor { text-align: right; }
+
+        .items-table .total-row th {
+            background-color: #0070c0;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #000;
+        }
+        .items-table .total-row td {
+            background-color: #fff;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        /* Observaciones */
+        .obs-block {
+            border: 2px solid #000;
+        }
+        .obs-header {
+            background-color: #a9d08e; /* Light green */
+            color: #fff;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-bottom: 2px solid #000;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+        .obs-content {
+            padding: 8px;
+            min-height: 40px;
+            background-color: #fff;
+        }
+        
+        /* Floating print button for screen viewing */
+        .floating-print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #005b9f;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .floating-print-btn:hover {
+            background: #00447a;
+        }
+    </style>
+</head>
+<body onload="setTimeout(function(){ window.print(); }, 500)">
+    
+    <button class="no-print floating-print-btn" onclick="window.print()">Imprimir PDF 🖨️</button>
+
+    <div class="document-container">
+        
+        <div class="header-top">
+            <div class="header-top-left">
+                <table>
+                    <tr><td>Código OP-02</td><td>Versión 01</td></tr>
+                    <tr><td>ASTECNOLOGÍA</td><td>01/02/2022</td></tr>
+                    <tr><td>S.A.S.</td><td></td></tr>
+                    <tr><td>Consecutivo {{ data.id_format.split('-')[1] }}</td><td></td></tr>
+                </table>
+            </div>
+            <div class="header-top-right">
+                <div class="logo-placeholder">
+                    <!-- Replace visually with the generic layout -->
+                    <div><img src="{{ url_for('static', filename='img/logo.png') }}" onerror="this.outerHTML='<h1 style=\'margin:0; color:#0e9f6e;\'>^</h1>'" style="max-height:60px;"></div>
+                    <div style="color:#2a3d76;">ASTECNOLOGÍA</div>
+                    <span>ASESORÍA Y SOLUCIONES</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="title-box">
+            {{ data.titulo }}
+        </div>
+
+        <div class="subheaders">
+            <table class="subheader-table">
+                <tr><th>DOC-#</th><td>{{ data.id_format }}</td></tr>
+                <tr><th>Mayorista/Cliente</th><td>{{ cliente.nombre_empresa }}</td></tr>
+                <tr><th>Contacto</th><td>{{ cliente.contacto_cliente or cliente.nombre_representante }}</td></tr>
+                <tr><th>Correo</th><td><a href="mailto:{{ cliente.email }}">{{ cliente.email }}</a></td></tr>
+            </table>
+
+            <table class="subheader-table">
+                <tr><th>Fecha</th><td>{{ data.fecha }}</td></tr>
+                <tr><th>Marca/Fabricante</th><td>VARIAS</td></tr>
+                <tr><th>Línea</th><td>TECNOLOGIA</td></tr>
+                <tr><th>Vendedor Canal</th><td>{{ data.vendedor }}</td></tr>
+            </table>
+        </div>
+
+        <div class="info-sections">
+            <!-- Left Info Block -->
+            <div class="info-block">
+                <div class="info-block-header">INFORMACIÓN USUARIO FINAL</div>
+                <table class="info-table">
+                    <tr><td class="col-label">Tipo de Identificación:</td><td class="col-value">{{ cliente.tipo_identificador or 'NIT' }}</td></tr>
+                    <tr><td class="col-label">Número de Identificación:</td><td class="col-value">{{ cliente.numero_identificacion }}</td></tr>
+                    <tr><td class="col-label">Empresa:</td><td class="col-value">{{ cliente.nombre_empresa }}</td></tr>
+                    <tr><td class="col-label">Sector Económico:</td><td class="col-value">{{ cliente.sector_economico or 'N/A' }}</td></tr>
+                    <tr><td class="col-label">Contacto:</td><td class="col-value">{{ cliente.contacto_cliente or 'N/A' }}</td></tr>
+                    <tr><td class="col-label">Cargo:</td><td class="col-value">{{ cliente.nombre_representante or 'N/A' }}</td></tr>
+                    <tr><td class="col-label">Dirección:</td><td class="col-value">{{ cliente.direccion_cliente }}</td></tr>
+                    <tr><td class="col-label">e-mail:</td><td class="col-value">{{ cliente.email }}</td></tr>
+                    <tr><td class="col-label">País:</td><td class="col-value">{{ cliente.pais_cliente or 'COLOMBIA' }}</td></tr>
+                    <tr><td class="col-label">Departamento:</td><td class="col-value">{{ cliente.departamento_cliente }}</td></tr>
+                    <tr><td class="col-label">Ciudad:</td><td class="col-value">{{ cliente.ciudad_cliente }}</td></tr>
+                    <tr><td class="col-label">Teléfono:</td><td class="col-value">{{ cliente.telefono }}</td></tr>
+                </table>
+            </div>
+
+            <!-- Right Info Block -->
+            <div class="info-block">
+                <div class="info-block-header">INFORMACIÓN CANAL</div>
+                <table class="info-table">
+                    <tr><td class="col-label">Nombre:</td><td class="col-value">ASTECNOLOGIA S.A.S.</td></tr>
+                    <tr><td class="col-label">NIT:</td><td class="col-value">901419978-6</td></tr>
+                    <tr><td class="col-label">Dirección:</td><td class="col-value">CARRERA 43A # 9SUR-91</td></tr>
+                    <tr><td class="col-label">Departamento:</td><td class="col-value">ANTIOQUIA</td></tr>
+                    <tr><td class="col-label">Ciudad:</td><td class="col-value">MEDELLIN</td></tr>
+                    <tr><td class="col-label">País:</td><td class="col-value">COLOMBIA</td></tr>
+                    <tr><td class="col-label">Contacto:</td><td class="col-value">Andrés Felipe Restrepo L</td></tr>
+                    <tr><td class="col-label">e-mail:</td><td class="col-value" style="font-size: 10px; color:#0000ff;">andres.restrepo@astecnologia.com.co</td></tr>
+                    <tr><td class="col-label">Cargo:</td><td class="col-value">Gerente Comercial y de Servicios</td></tr>
+                    <tr><td class="col-label">Celular:</td><td class="col-value">3154718096</td></tr>
+                    <tr><td class="col-label">Teléfono:</td><td class="col-value"></td></tr>
+                    <!-- Extra spacer to align roughly the heights -->
+                    <tr><td class="col-label" style="height: 18px;"></td><td class="col-value"></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 12%;">Numero de Parte</th>
+                    <th style="width: 25%;">Descripción</th>
+                    <th style="width: 25%;">Detalle</th>
+                    <th style="width: 8%;">Cant</th>
+                    <th style="width: 15%;">Valor Unitario COP $</th>
+                    <th style="width: 15%;">Valor T. COP $</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lineas %}
+                <tr>
+                    <td>{{ l.no_parte }}</td>
+                    <td><b>{{ l.desc }}</b></td>
+                    <td>{{ l.detalle }}</td>
+                    <td class="col-cant">{{ l.cant }}</td>
+                    <td class="col-valor">COP $ {{ "{:,.2f}".format(l.v_unitario) }}</td>
+                    <td class="col-valor">COP $ {{ "{:,.2f}".format(l.v_total) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #666; padding: 20px;">Sin detalles</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <th colspan="5" style="text-align: center;">TOTAL</th>
+                    <td class="col-valor">COP {{ "{:,.2f}".format(data.total) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="obs-block">
+            <div class="obs-header">OBSERVACIONES</div>
+            <div class="obs-content">
+                {{ data.observaciones | replace('\n', '<br>') | safe }}
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
